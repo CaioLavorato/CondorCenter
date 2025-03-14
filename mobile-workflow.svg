@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="600px" viewBox="0 0 800 600" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Condor Center Mobile Development Workflow</title>
+    <defs>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradientBackground">
+            <stop stop-color="#F9F9F9" offset="0%"></stop>
+            <stop stop-color="#EFEFEF" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradientHeader">
+            <stop stop-color="#6200EE" offset="0%"></stop>
+            <stop stop-color="#9F44D3" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradientBox1">
+            <stop stop-color="#EBF8FF" offset="0%"></stop>
+            <stop stop-color="#D1EBFF" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradientBox2">
+            <stop stop-color="#F0FFF4" offset="0%"></stop>
+            <stop stop-color="#DCFCE7" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradientBox3">
+            <stop stop-color="#FFF5F5" offset="0%"></stop>
+            <stop stop-color="#FEE2E2" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradientBox4">
+            <stop stop-color="#FFFBEB" offset="0%"></stop>
+            <stop stop-color="#FEF3C7" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="FlowChart" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Background -->
+        <rect id="Background" fill="url(#gradientBackground)" x="0" y="0" width="800" height="600" rx="5"></rect>
+        
+        <!-- Header -->
+        <rect id="HeaderBackground" fill="url(#gradientHeader)" x="0" y="0" width="800" height="80" rx="5"></rect>
+        <text id="HeaderTitle" font-family="Arial-BoldMT, Arial" font-size="24" font-weight="bold" fill="#FFFFFF">
+            <tspan x="135" y="50">Fluxo de Desenvolvimento Mobile - Condor Center</tspan>
+        </text>
+        
+        <!-- Start Box -->
+        <rect id="StartBox" fill="#FFFFFF" stroke="#6B7280" stroke-width="2" x="350" y="110" width="100" height="50" rx="8"></rect>
+        <text id="StartText" font-family="Arial" font-size="14" font-weight="normal" fill="#333333" text-anchor="middle">
+            <tspan x="400" y="140">Início</tspan>
+        </text>
+        
+        <!-- Flow Arrows -->
+        <path d="M400,160 L400,190" id="Arrow1" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0,0"></path>
+        <polygon id="ArrowHead1" fill="#6B7280" points="400 190 395 180 405 180"></polygon>
+        
+        <!-- Box 1: Preparação -->
+        <rect id="Box1" fill="url(#gradientBox1)" stroke="#3B82F6" stroke-width="2" x="200" y="190" width="400" height="80" rx="8"></rect>
+        <text id="Box1Title" font-family="Arial-BoldMT, Arial" font-size="16" font-weight="bold" fill="#1E40AF">
+            <tspan x="355" y="220">Preparação</tspan>
+        </text>
+        <text id="Box1Text" font-family="Arial" font-size="14" font-weight="normal" fill="#333333" text-anchor="middle">
+            <tspan x="400" y="245">./prepare-mobile-environment.sh</tspan>
+        </text>
+        
+        <!-- Flow Arrows -->
+        <path d="M400,270 L400,300" id="Arrow2" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0,0"></path>
+        <polygon id="ArrowHead2" fill="#6B7280" points="400 300 395 290 405 290"></polygon>
+        
+        <!-- Box 2: Construção -->
+        <rect id="Box2" fill="url(#gradientBox2)" stroke="#22C55E" stroke-width="2" x="200" y="300" width="400" height="80" rx="8"></rect>
+        <text id="Box2Title" font-family="Arial-BoldMT, Arial" font-size="16" font-weight="bold" fill="#15803D">
+            <tspan x="350" y="330">Construção</tspan>
+        </text>
+        <text id="Box2Text" font-family="Arial" font-size="14" font-weight="normal" fill="#333333" text-anchor="middle">
+            <tspan x="400" y="355">./capacitor-build.sh</tspan>
+        </text>
+        
+        <!-- Flow Arrows -->
+        <path d="M400,380 L400,400 L250,400 L250,420" id="Arrow3Left" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0,0"></path>
+        <polygon id="ArrowHead3Left" fill="#6B7280" points="250 420 245 410 255 410"></polygon>
+        
+        <path d="M400,380 L400,400 L550,400 L550,420" id="Arrow3Right" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0,0"></path>
+        <polygon id="ArrowHead3Right" fill="#6B7280" points="550 420 545 410 555 410"></polygon>
+        
+        <!-- Box 3: Android -->
+        <rect id="Box3" fill="url(#gradientBox3)" stroke="#EF4444" stroke-width="2" x="150" y="420" width="200" height="80" rx="8"></rect>
+        <text id="Box3Title" font-family="Arial-BoldMT, Arial" font-size="16" font-weight="bold" fill="#B91C1C">
+            <tspan x="220" y="450">Android</tspan>
+        </text>
+        <text id="Box3Text" font-family="Arial" font-size="14" font-weight="normal" fill="#333333" text-anchor="middle">
+            <tspan x="250" y="475">npx cap open android</tspan>
+        </text>
+        
+        <!-- Box 4: iOS -->
+        <rect id="Box4" fill="url(#gradientBox4)" stroke="#F59E0B" stroke-width="2" x="450" y="420" width="200" height="80" rx="8"></rect>
+        <text id="Box4Title" font-family="Arial-BoldMT, Arial" font-size="16" font-weight="bold" fill="#B45309">
+            <tspan x="535" y="450">iOS</tspan>
+        </text>
+        <text id="Box4Text" font-family="Arial" font-size="14" font-weight="normal" fill="#333333" text-anchor="middle">
+            <tspan x="550" y="475">npx cap open ios</tspan>
+        </text>
+        
+        <!-- Flow Arrows -->
+        <path d="M250,500 L250,520" id="Arrow4Left" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0,0"></path>
+        <polygon id="ArrowHead4Left" fill="#6B7280" points="250 520 245 510 255 510"></polygon>
+        
+        <path d="M550,500 L550,520" id="Arrow4Right" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0,0"></path>
+        <polygon id="ArrowHead4Right" fill="#6B7280" points="550 520 545 510 555 510"></polygon>
+        
+        <!-- Box 5: Instalação -->
+        <rect id="Box5" fill="#FFFFFF" stroke="#6B7280" stroke-width="2" x="150" y="520" width="500" height="50" rx="8"></rect>
+        <text id="Box5Text" font-family="Arial" font-size="14" font-weight="normal" fill="#333333" text-anchor="middle">
+            <tspan x="400" y="550">Instalação e Teste: ./install-mobile-apps.sh</tspan>
+        </text>
+    </g>
+</svg>

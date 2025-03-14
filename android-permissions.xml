@@ -1,27 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Este arquivo contém as permissões que serão adicionadas ao AndroidManifest.xml -->
+<!-- 
+  Permissões necessárias para o aplicativo Android Condor Center
+  Adicione estas permissões ao AndroidManifest.xml do seu projeto
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Permissões para escanear código de barras -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    
-    <!-- Permissões para internet e rede -->
+    <!-- Permissões básicas -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
-    <!-- Permissões para notificações -->
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    
-    <!-- Permissões para armazenamento -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    
-    <!-- Permissões para localização -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    
-    <!-- Permissões para hardware -->
+    <!-- Permissões para câmera (escaneamento de código de barras) -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
-    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    
+    <!-- Permissões para notificações -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Permissões para armazenamento (cache offline) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+                     android:maxSdkVersion="29" />
+    
+    <!-- Opcional: Permissões para localização (identificação de prédio) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- Opcional: Permissões para biometria (autenticação) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 </manifest>

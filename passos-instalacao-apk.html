@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passos para Instalação do APK Condor Center</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #6200EE;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .step-box {
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .step-1 {
+            background-color: #EBF8FF;
+            border-left: 5px solid #3B82F6;
+        }
+        .step-2 {
+            background-color: #F0FFF4;
+            border-left: 5px solid #22C55E;
+        }
+        .step-3 {
+            background-color: #FFF5F5;
+            border-left: 5px solid #EF4444;
+        }
+        .step-4 {
+            background-color: #FFFBEB;
+            border-left: 5px solid #F59E0B;
+        }
+        h2 {
+            margin-top: 0;
+            color: #4B5563;
+        }
+        code {
+            background-color: #F3F4F6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .note {
+            background-color: #F9FAFB;
+            border-left: 5px solid #9CA3AF;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 4px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #6B7280;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">
+        <!-- Placeholder para logo -->
+        <div style="width: 100px; height: 100px; background: linear-gradient(to bottom right, #6200EE, #9F44D3); border-radius: 20px; margin: 0 auto; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold;">
+            CC
+        </div>
+    </div>
+
+    <h1>Passos para Instalação do APK Condor Center</h1>
+
+    <div class="steps-container">
+        <div class="step-box step-1">
+            <h2>Passo 1: Preparação do Ambiente</h2>
+            <p>Verifique se seu ambiente de desenvolvimento está configurado corretamente:</p>
+            <code>./prepare-mobile-environment.sh</code>
+            <p>Este script verificará se você tem todas as dependências necessárias instaladas e se os recursos gráficos estão disponíveis.</p>
+        </div>
+
+        <div class="step-box step-2">
+            <h2>Passo 2: Construção do Aplicativo</h2>
+            <p>Execute o script de build para compilar o aplicativo web e preparar os projetos nativos:</p>
+            <code>./capacitor-build.sh</code>
+            <p>Este processo irá:</p>
+            <ul>
+                <li>Compilar a aplicação web</li>
+                <li>Sincronizar com o Capacitor</li>
+                <li>Criar ou atualizar os projetos Android e iOS</li>
+                <li>Gerar os recursos visuais necessários</li>
+            </ul>
+        </div>
+
+        <div class="step-box step-3">
+            <h2>Passo 3: Compilação do APK</h2>
+            <p>Abra o projeto no Android Studio para compilar o APK:</p>
+            <code>npx cap open android</code>
+            <p>No Android Studio:</p>
+            <ol>
+                <li>Aguarde a sincronização do Gradle</li>
+                <li>Selecione Build &gt; Build Bundle(s) / APK(s) &gt; Build APK(s)</li>
+                <li>O APK será gerado em <code>android/app/build/outputs/apk/debug/app-debug.apk</code></li>
+            </ol>
+            <p>Alternativamente, compile via linha de comando:</p>
+            <code>cd android && ./gradlew assembleDebug</code>
+        </div>
+
+        <div class="step-box step-4">
+            <h2>Passo 4: Instalação em Dispositivos</h2>
+            <p>Use o script de instalação para instalar o APK em dispositivos conectados:</p>
+            <code>./install-mobile-apps.sh</code>
+            <p>Este script irá:</p>
+            <ul>
+                <li>Verificar dispositivos Android conectados via USB</li>
+                <li>Instalar o APK em todos os dispositivos</li>
+                <li>Confirmar a instalação bem-sucedida</li>
+            </ul>
+            <p>Alternativamente, transfira o APK manualmente para o dispositivo e instale-o.</p>
+        </div>
+    </div>
+
+    <div class="note">
+        <h3>Observações Importantes</h3>
+        <ul>
+            <li>Certifique-se de ter a depuração USB ativada no dispositivo Android</li>
+            <li>Para instalar em dispositivos iOS, você precisará de um Mac com Xcode</li>
+            <li>Para distribuição em produção, siga as instruções em <code>MOBILE_APP_GUIDE.md</code></li>
+            <li>Consulte <code>README-CONDOR-MOBILE.md</code> para documentação completa</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p>Condor Center - Aplicativo Mobile &copy; 2025</p>
+    </div>
+</body>
+</html>
