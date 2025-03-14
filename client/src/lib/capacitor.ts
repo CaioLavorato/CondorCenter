@@ -6,7 +6,9 @@ import { Device } from '@capacitor/device';
 
 // Verifica se estamos em ambiente Capacitor (aplicativo nativo)
 export const isNativeApp = () => {
-  return window.Capacitor && window.Capacitor.isNative;
+  return typeof window !== 'undefined' && 
+         'Capacitor' in window && 
+         (window as any).Capacitor?.isNative;
 };
 
 // Inicializa o app e oculta a splash screen
@@ -44,7 +46,7 @@ export const sendLocalNotification = async (title: string, body: string) => {
           title,
           body,
           id: new Date().getTime(),
-          sound: null,
+          sound: undefined,
           schedule: { at: new Date(Date.now() + 1000) }
         }
       ]

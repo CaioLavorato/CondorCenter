@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="2732px" height="2732px" viewBox="0 0 2732 2732" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Condor Center Splash Screen</title>
+    <defs>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="splashGradient">
+            <stop stop-color="#6200EE" offset="0%"></stop>
+            <stop stop-color="#9F44D3" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="SplashScreen" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Background -->
+        <rect id="Background" fill="url(#splashGradient)" x="0" y="0" width="2732" height="2732"></rect>
+        
+        <!-- App Logo -->
+        <g id="Logo" transform="translate(866, 866)">
+            <circle id="Background" fill="#FFFFFF" cx="500" cy="500" r="500"></circle>
+            
+            <!-- Shopping Bag Icon -->
+            <g id="ShoppingIcon" transform="translate(250, 250)" fill="#6200EE">
+                <path d="M300,100 C300,44.7715 255.228,0 200,0 C144.772,0 100,44.7715 100,100 L0,100 L0,550 C0,577.614 22.3858,600 50,600 L350,600 C377.614,600 400,577.614 400,550 L400,100 L300,100 Z M160,100 C160,78.0086 177.909,60 200,60 C222.091,60 240,78.0086 240,100 L160,100 Z M300,180 L300,260 C311.046,260 320,268.954 320,280 C320,291.046 311.046,300 300,300 L300,400 C311.046,400 320,408.954 320,420 C320,431.046 311.046,440 300,440 L300,520 L100,520 L100,440 C88.9543,440 80,431.046 80,420 C80,408.954 88.9543,400 100,400 L100,300 C88.9543,300 80,291.046 80,280 C80,268.954 88.9543,260 100,260 L100,180 L300,180 Z" fill-rule="nonzero"></path>
+            </g>
+            
+            <!-- QR Code Scan Icon -->
+            <g id="ScanIcon" transform="translate(250, 250)" fill="#6200EE">
+                <rect x="140" y="220" width="120" height="20"></rect>
+                <rect x="140" y="260" width="120" height="20"></rect>
+                <rect x="140" y="300" width="120" height="20"></rect>
+                <rect x="140" y="340" width="120" height="20"></rect>
+                <rect x="140" y="380" width="120" height="20"></rect>
+            </g>
+        </g>
+        
+        <!-- Text -->
+        <text id="AppName" font-family="Arial-BoldMT, Arial" font-size="120" font-weight="bold" fill="#FFFFFF" text-anchor="middle" x="1366" y="1866">
+            Condor Center
+        </text>
+    </g>
+</svg>
