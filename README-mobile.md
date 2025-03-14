@@ -1,94 +1,160 @@
-# Condor Center - Aplicativo Móvel
+# Condor Center - Aplicativo Mobile
 
-## Configuração do Ambiente
+Este documento contém informações sobre a versão mobile do aplicativo Condor Center, incluindo recursos específicos para Android e iOS, guias de configuração e dicas de desenvolvimento.
 
-### Pré-requisitos
+## Visão Geral
 
-- [Node.js](https://nodejs.org/) v16+
-- [Android Studio](https://developer.android.com/studio) para desenvolvimento Android
-- [Xcode](https://developer.apple.com/xcode/) para desenvolvimento iOS (somente macOS)
-- [Capacitor](https://capacitorjs.com/)
+O Condor Center Mobile é uma aplicação híbrida construída com React/TypeScript para o frontend e Node.js/Express para o backend, utilizando o framework Capacitor para transformar a aplicação web em aplicativos nativos para Android e iOS.
 
-## Guia Rápido
+## Requisitos
 
-### Primeira execução
+- Node.js 16+
+- NPM 7+
+- Android Studio (para desenvolvimento Android)
+- Xcode 13+ (para desenvolvimento iOS, apenas macOS)
+- CocoaPods (para iOS)
+- ImageMagick (opcional, para geração de assets)
 
-Para inicializar o ambiente Capacitor após clonar o repositório:
+## Recursos Específicos para Mobile
 
-```bash
-./capacitor-build.sh init
-```
+- Escaneamento de códigos de barras/QR Code
+- Notificações push
+- Salvamento offline de dados
+- Compartilhamento de conteúdo
+- Acesso à câmera
+- Animações otimizadas para touch
 
-### Adicionar plataformas
+## Instalação e Configuração
 
-Para adicionar suporte ao Android:
+### Preparação do Ambiente
 
-```bash
-./capacitor-build.sh add-android
-```
+1. Certifique-se de ter Node.js e NPM instalados
+2. Instale as dependências do projeto:
+   ```
+   npm install
+   ```
+3. Para desenvolvimento Android, instale o Android Studio e configure o SDK
+4. Para desenvolvimento iOS, instale Xcode e CocoaPods (apenas em macOS)
 
-Para adicionar suporte ao iOS (somente em macOS):
+### Construindo e Executando
 
-```bash
-./capacitor-build.sh add-ios
-```
-
-### Construir e atualizar o aplicativo
-
-Para construir o aplicativo web e sincronizar com as plataformas nativas:
-
-```bash
-./capacitor-build.sh build
-```
-
-### Abrir em ambiente de desenvolvimento
-
-Para abrir no Android Studio:
+#### Construir a versão web e sincronizar com Capacitor
 
 ```bash
-./capacitor-build.sh android
+./capacitor-build.sh
 ```
 
-Para abrir no Xcode (somente macOS):
+Esse script irá:
+1. Compilar a aplicação web
+2. Sincronizar os arquivos com o Capacitor
+3. Atualizar projetos Android e iOS
+4. Fornecer comandos para execução
+
+#### Desenvolvimento Android
+
+Após executar o script de build:
 
 ```bash
-./capacitor-build.sh ios
+npx cap open android
 ```
 
-## Funcionalidades Nativas
+Isso abrirá o projeto no Android Studio. A partir daí, você pode:
+- Compilar e executar o aplicativo em um emulador ou dispositivo físico
+- Depurar usando ferramentas nativas do Android
+- Modificar recursos específicos do Android
 
-O aplicativo utiliza recursos nativos do dispositivo através do Capacitor:
+#### Desenvolvimento iOS (apenas macOS)
 
-- **Câmera**: Utilizada para scanner de código de barras
-- **Notificações Locais**: Para enviar alertas de promoções e status de pedidos
-- **Splash Screen**: Tela de inicialização personalizada
-- **Integração com UI do sistema**: Adaptação ao tema do dispositivo
+Após executar o script de build:
 
-## Geração de APK/IPA
+```bash
+npx cap open ios
+```
 
-### Android (APK)
+Isso abrirá o projeto no Xcode. A partir daí, você pode:
+- Compilar e executar o aplicativo em um simulador ou dispositivo físico
+- Depurar usando ferramentas nativas do iOS
+- Modificar recursos específicos do iOS
 
-1. Abra o projeto no Android Studio usando `./capacitor-build.sh android`
-2. No menu, vá em Build > Build Bundle(s) / APK(s) > Build APK(s)
-3. O APK será gerado em `android/app/build/outputs/apk/debug/app-debug.apk`
+## Estrutura de Diretórios
 
-### iOS (IPA)
+```
+/
+├── android/               # Projeto Android Studio
+├── ios/                   # Projeto Xcode
+├── capacitor.config.ts    # Configuração do Capacitor
+├── resources/             # Ícones e splash screens
+├── client/src/lib/capacitor.ts   # Utilitários para Capacitor
+├── client/src/hooks/use-mobile-device.tsx  # Hook para informações do dispositivo
+├── capacitor-build.sh     # Script de build para Capacitor
+└── mobile-assets.sh       # Script para gerar assets mobile
+```
 
-1. Abra o projeto no Xcode usando `./capacitor-build.sh ios`
-2. Configure os certificados de assinatura
-3. Selecione Product > Archive
-4. Siga as instruções para distribuir o aplicativo
+## Personalização e Temas
 
-## Troubleshooting
+O aplicativo Condor Center usa uma abordagem de design responsivo e adaptativo que:
 
-Se encontrar problemas:
+- Ajusta layouts automaticamente para diferentes tamanhos de tela
+- Implementa gestos de toque nativos (swipe, pinch, etc.)
+- Adapta-se a diferentes densidades de pixel
+- Suporta temas claro e escuro
+- Considera as áreas seguras (notches, navegação por gestos, etc.)
 
-1. Verifique se todas as dependências estão instaladas
-2. Execute `./capacitor-build.sh build` para sincronizar novamente
-3. Limpe os caches do projeto (Android Studio: File > Invalidate Caches)
-4. Se o problema persistir, verifique o log do Capacitor para mais detalhes
+## Geração de Ícones e Splash Screens
 
-## Recursos Adicionais
+Para gerar ícones e splash screens para todas as plataformas e resoluções necessárias:
 
-- [Documentação do Capacitor](https://capacitorjs.com/docs)
-- [Guia de APIs Nativas](https://capacitorjs.com/docs/apis)
+```bash
+./mobile-assets.sh
+```
+
+Este script utiliza o ImageMagick para converter os arquivos SVG em resources/ para todas as resoluções necessárias.
+
+## Plugins Capacitor Utilizados
+
+- @capacitor/core: Biblioteca principal
+- @capacitor/android: Suporte ao Android
+- @capacitor/ios: Suporte ao iOS
+- @capacitor/camera: Acesso à câmera
+- @capacitor/local-notifications: Notificações locais
+- @capacitor/splash-screen: Gerenciamento da splash screen
+- @capacitor/app: Eventos do ciclo de vida do aplicativo
+- @capacitor/device: Informações sobre o dispositivo
+
+## Solução de Problemas
+
+### Problemas comuns em Android
+
+- **Erro no AndroidManifest.xml**: Certifique-se de que todas as permissões necessárias estão declaradas.
+- **Problemas com SSL**: Em modo de desenvolvimento, configure o Network Security Config para permitir tráfego HTTP.
+- **Erros de compilação**: Execute `npx cap sync` para garantir que todas as dependências estejam atualizadas.
+
+### Problemas comuns em iOS
+
+- **Erros de CocoaPods**: Execute `pod repo update` e depois `pod install` no diretório `ios/App/`.
+- **Problemas de certificados**: Configure corretamente os perfis de provisionamento no Xcode.
+- **Problemas com permissões**: Verifique se as descrições de uso (Usage Description) estão configuradas no Info.plist.
+
+## Notas de Implementação
+
+- A detecção de dispositivo é feita através do hook `useMobileDevice`
+- Funcionalidades nativas são implementadas de forma condicional, com fallbacks para a web
+- CSS específico para aplicativos nativos é aplicado usando as classes 'native-app', 'ios-app', e 'android-app'
+
+## Considerações de Performance
+
+Para garantir a melhor experiência em dispositivos móveis:
+
+- Otimize imagens e assets para reduzir o tamanho do aplicativo
+- Minimize o uso de animações complexas em dispositivos de baixo desempenho
+- Implemente carregamento lazy para componentes e dados
+- Armazene dados em cache para uso offline
+- Minimize o número de requisições de rede
+
+## Próximos Passos
+
+- [ ] Implementar sincronização offline
+- [ ] Adicionar autenticação biométrica
+- [ ] Otimizar para diferentes tamanhos de tela (tablets)
+- [ ] Implementar modo de baixo consumo de dados
+- [ ] Adicionar testes automatizados específicos para mobile

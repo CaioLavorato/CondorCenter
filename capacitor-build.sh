@@ -1,75 +1,94 @@
 #!/bin/bash
 
-# Esse script ajuda a construir e gerenciar o aplicativo Capacitor
+# Script para compilar e preparar o projeto para o Capacitor
 
-# Função para exibir mensagens de ajuda
-show_help() {
-  echo "Uso: ./capacitor-build.sh [opção]"
-  echo "Opções:"
-  echo "  init        - Inicializa o Capacitor no projeto"
-  echo "  build       - Constrói o projeto e sincroniza com o Capacitor"
-  echo "  add-android - Adiciona a plataforma Android"
-  echo "  add-ios     - Adiciona a plataforma iOS"
-  echo "  android     - Constrói e abre o projeto Android (necessita Android Studio)"
-  echo "  ios         - Constrói e abre o projeto iOS (necessita Xcode, apenas em macOS)"
-  echo "  help        - Exibe esta mensagem de ajuda"
-}
-
-# Verificação de argumentos
-if [ $# -eq 0 ]; then
-  show_help
+# Verificar se o capacitor está instalado
+if ! command -v npx cap &> /dev/null; then
+  echo "Capacitor CLI não encontrado. Verifique se @capacitor/cli está instalado."
   exit 1
 fi
 
-# Executa a ação com base no argumento fornecido
-case "$1" in
-  init)
-    echo "Inicializando o Capacitor..."
-    npx cap init
-    ;;
-    
-  build)
-    echo "Construindo o projeto e sincronizando com o Capacitor..."
-    npm run build
-    npx cap sync
-    echo "Sincronização concluída!"
-    ;;
-    
-  add-android)
-    echo "Adicionando suporte para Android..."
-    npx cap add android
-    echo "Plataforma Android adicionada com sucesso!"
-    ;;
-    
-  add-ios)
-    echo "Adicionando suporte para iOS..."
-    npx cap add ios
-    echo "Plataforma iOS adicionada com sucesso!"
-    ;;
-    
-  android)
-    echo "Construindo e abrindo o projeto Android..."
-    npm run build
-    npx cap sync
-    npx cap open android
-    ;;
-    
-  ios)
-    echo "Construindo e abrindo o projeto iOS..."
-    npm run build
-    npx cap sync
-    npx cap open ios
-    ;;
-    
-  help)
-    show_help
-    ;;
-    
-  *)
-    echo "Opção desconhecida: $1"
-    show_help
-    exit 1
-    ;;
-esac
+# Cores para saída
+GREEN="\033[0;32m"
+BLUE="\033[0;34m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+NC="\033[0m" # No Color
 
-exit 0
+echo -e "${BLUE}=== INICIANDO PROCESSO DE BUILD PARA APLICATIVO CONDOR CENTER ===${NC}"
+
+# Etapa 1: Construir a aplicação web
+echo -e "${YELLOW}[1/5]${NC} Compilando aplicação web..."
+npm run build
+if [ $? -ne 0 ]; then
+  echo -e "${RED}Erro ao compilar a aplicação web. Verifique os logs acima.${NC}"
+  exit 1
+fi
+echo -e "${GREEN}✓ Aplicação web compilada com sucesso!${NC}"
+
+# Etapa 2: Copiar o build para o diretório do Capacitor
+echo -e "${YELLOW}[2/5]${NC} Sincronizando arquivos com o Capacitor..."
+npx cap sync
+if [ $? -ne 0 ]; then
+  echo -e "${RED}Erro ao sincronizar com o Capacitor. Verifique os logs acima.${NC}"
+  exit 1
+fi
+echo -e "${GREEN}✓ Arquivos sincronizados com o Capacitor!${NC}"
+
+# Etapa 3: Preparar aplicação Android (opcional)
+if [ -d "android" ]; then
+  echo -e "${YELLOW}[3/5]${NC} Atualizando projeto Android..."
+  
+  # Se o ImageMagick estiver disponível, gera automaticamente o ícone adaptativo para Android
+  if command -v convert &> /dev/null; then
+    echo "Gerando ícones adaptativos para Android..."
+    if [ -f "resources/icon.svg" ]; then
+      mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+      ./mobile-assets.sh
+    fi
+  fi
+  
+  npx cap update android
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}Erro ao atualizar o projeto Android. Verifique os logs acima.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}✓ Projeto Android atualizado!${NC}"
+else
+  echo -e "${YELLOW}[3/5]${NC} Adicionando plataforma Android..."
+  npx cap add android
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}Erro ao adicionar a plataforma Android. Verifique os logs acima.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}✓ Plataforma Android adicionada!${NC}"
+fi
+
+# Etapa 4: Preparar aplicação iOS (opcional)
+if [ -d "ios" ]; then
+  echo -e "${YELLOW}[4/5]${NC} Atualizando projeto iOS..."
+  npx cap update ios
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}Erro ao atualizar o projeto iOS. Verifique os logs acima.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}✓ Projeto iOS atualizado!${NC}"
+else
+  echo -e "${YELLOW}[4/5]${NC} Adicionando plataforma iOS..."
+  npx cap add ios
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}Erro ao adicionar a plataforma iOS. Verifique os logs acima.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}✓ Plataforma iOS adicionada!${NC}"
+fi
+
+# Etapa 5: Abrir IDEs nativas (opcional)
+echo -e "${YELLOW}[5/5]${NC} Próximos passos:"
+echo -e "  Para abrir o projeto Android Studio: ${BLUE}npx cap open android${NC}"
+echo -e "  Para abrir o projeto Xcode: ${BLUE}npx cap open ios${NC}"
+echo -e "  Para executar em Android: ${BLUE}npx cap run android${NC}"
+echo -e "  Para executar em iOS: ${BLUE}npx cap run ios${NC}"
+
+echo -e "\n${GREEN}=== BUILD CONCLUÍDO COM SUCESSO! ===${NC}"
+echo -e "O Condor Center está pronto para ser compilado como aplicativo nativo."
