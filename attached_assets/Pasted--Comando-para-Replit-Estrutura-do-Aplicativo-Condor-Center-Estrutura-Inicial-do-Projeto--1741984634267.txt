@@ -1,0 +1,111 @@
+**Comando para Replit - Estrutura do Aplicativo Condor Center**
+
+### Estrutura Inicial do Projeto (Fase 1 - Janeiro a Fevereiro)
+
+#### 1. Cadastro e Login
+- Tela de Cadastro:
+  - Nome completo
+  - Telefone (verificação via SMS)
+  - E-mail (validação necessária)
+  - Aceite de termos e condições
+- Tela de Login:
+  - Campos: e-mail/CPF e senha
+  - Botão "Esqueci minha senha" (redefinição por e-mail)
+
+#### 2. Tela Inicial (Home)
+- Identificação do usuário:
+  - Exibir nome do usuário (ex.: "Olá, Fulano de Tal")
+  - Exibir nome do prédio
+- Comunicação:
+  - Carrossel de banners promocionais (3 banners)
+- Barra Inferior (Navegação Rápida):
+  - Escanear produtos (atalho)
+  - Suporte via WhatsApp (botão de acesso)
+- Notificações:
+  - Exibir sininho com contador de notificações pendentes
+  - Alertas sobre promoções, status de pagamentos, novidades
+- Perfil e Configurações:
+  - Ajustes de dados pessoais
+  - Completar cadastro
+  - Métodos de pagamento e preferências
+
+#### 3. Fluxo de Compra no Minimercado
+- **Escaneamento de Código de Barras:**
+  - Uso da câmera para escanear código de barras
+  - Exibição de detalhes do produto (Nome, preço, descrição)
+  - Botões: "Adicionar ao Carrinho" e "Comprar Agora"
+- **Carrinho de Compras:**
+  - Lista de itens escaneados
+  - Total parcial do pagamento
+  - Botão "Finalizar Compra"
+- **Pagamento:**
+  - Cadastro/seleção de método de pagamento (PIX/cartão de crédito)
+  - Confirmação do valor total
+  - Botão "Confirmar Pagamento"
+- **Confirmação:**
+  - Mensagem de sucesso
+  - Botão "Ver Histórico de Compras"
+
+#### 4. Gerenciamento de Métodos de Pagamento
+- Cadastro de cartão de crédito (Nome do titular, número, validade, CVV)
+- Integração com PIX (chave ou QR code gerado no checkout)
+- Interface limpa e intuitiva para gerenciar métodos de pagamento
+- Botão "Definir como método preferido"
+
+#### 5. Considerações de Design
+- **Estilo Visual:**
+  - Layout moderno e minimalista
+  - Cores neutras (branco, cinza) com roxo e laranja (cores da marca)
+  - Ícones intuitivos para navegação (carrinho, sininho, câmera, etc.)
+- **UX:**
+  - Ações realizadas em 2-3 cliques
+  - Botões grandes e fáceis de clicar
+- **Elementos de Feedback:**
+  - Mensagens visuais de confirmação e erro
+  - Indicadores de progresso no checkout (se viável nesta fase)
+
+#### 6. Ferramentas e Integrações Necessárias
+- **Câmera:** Para leitura de códigos de barras
+- **Gateway de Pagamento:** Integração com solução da Glik (PIX/cartão)
+- **Notificações Push:** Firebase Cloud Messaging (FCM)
+- **Banco de Dados:** Armazenamento de usuários, produtos e compras
+
+#### 7. Funcionalidades Principais da Fase 1
+- Cadastro e Login:
+  - Cadastro de novos usuários (CPF, nome, e-mail, telefone, senha)
+  - Código de confirmação via SMS, WhatsApp ou e-mail
+  - Pop-up no primeiro acesso incentivando a conclusão do cadastro
+  - Seleção do prédio via geolocalização ou CEP
+- Compras:
+  - Carrinho de compras
+  - Checkout simplificado
+  - Catálogo inicial de produtos e serviços (com filtros e busca)
+- Banners e Comunicações:
+  - Exibição de banners promocionais
+  - Histórico de notificações salvas (referência PicPay)
+- Cashback:
+  - Acúmulo de pontos em compras
+  - Exibição de saldo e possibilidade de uso
+- Integração de Pagamento:
+  - Conexão com gateway de pagamento da Glik
+- Banco de Dados e Relatórios:
+  - Coleta de dados básicos de uso e vendas
+  - Painel administrativo para análise de dados iniciais
+
+---
+
+### **Fase 2: Adaptações e Estabilizações**
+- **Expansão de Banners e Stories:**
+  - Stories dentro do app para promoções e novidades
+  - Sistema de banners segmentados por perfil de usuário
+- **Notificações Avançadas:**
+  - Pushs personalizadas
+  - Recomendação de produtos e serviços baseada em dados de uso
+- **Melhoria de Relatórios e Dados:**
+  - Dashboard completo para administradores
+  - Relatórios detalhados de vendas, cashback, engajamento
+
+---
+
+Esse documento serve como referência para a estruturação e implementação da Fase 1 do aplicativo Condor Center. Ajustes poderão ser feitos conforme necessário durante o desenvolvimento e testes iniciais.
+
