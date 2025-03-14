@@ -96,7 +96,13 @@ export default function AuthPage() {
                   <FormItem>
                     <FormLabel>E-mail ou CPF</FormLabel>
                     <FormControl>
-                      <Input placeholder="Seu e-mail ou CPF" {...field} />
+                      <Input 
+                        placeholder="Seu e-mail ou CPF" 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -109,7 +115,14 @@ export default function AuthPage() {
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Sua senha" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="Sua senha" 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -166,7 +179,13 @@ export default function AuthPage() {
                   <FormItem>
                     <FormLabel>Nome completo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Seu nome completo" {...field} />
+                      <Input 
+                        placeholder="Seu nome completo" 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -179,7 +198,13 @@ export default function AuthPage() {
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
                     <FormControl>
-                      <Input placeholder="(00) 00000-0000" {...field} />
+                      <Input 
+                        placeholder="(00) 00000-0000" 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                     <p className="text-xs text-gray-600 mt-1">
@@ -195,7 +220,13 @@ export default function AuthPage() {
                   <FormItem>
                     <FormLabel>E-mail</FormLabel>
                     <FormControl>
-                      <Input placeholder="seu@email.com" {...field} />
+                      <Input 
+                        placeholder="seu@email.com" 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -208,7 +239,14 @@ export default function AuthPage() {
                   <FormItem>
                     <FormLabel>Crie uma senha</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="Mínimo 6 caracteres" 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -221,7 +259,13 @@ export default function AuthPage() {
                   <FormItem>
                     <FormLabel>Prédio/Condomínio (opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do seu prédio ou condomínio" {...field} />
+                      <Input 
+                        placeholder="Nome do seu prédio ou condomínio" 
+                        value={field.value} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
