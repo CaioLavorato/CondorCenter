@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -36,6 +35,19 @@ export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("login");
   const { user, loginMutation, registerMutation, isLoading } = useAuth();
   const [, navigate] = useLocation();
+  
+  // Formulário simplificado sem react-hook-form
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginErrors, setLoginErrors] = useState<Record<string, string>>({});
+  
+  const [regFullName, setRegFullName] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regBuilding, setRegBuilding] = useState("");
+  const [regTerms, setRegTerms] = useState(false);
+  const [regErrors, setRegErrors] = useState<Record<string, string>>({});
 
   // Redirect if already logged in
   useEffect(() => {
@@ -44,33 +56,78 @@ export default function AuthPage() {
     }
   }, [user, navigate]);
 
-  const loginForm = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const registerForm = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      password: "",
-      building: "",
-      terms: false,
-    },
-  });
-
-  const onLoginSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
+  const validateLoginForm = () => {
+    const errors: Record<string, string> = {};
+    if (!loginEmail) {
+      errors.email = "E-mail é obrigatório";
+    } else if (!/\S+@\S+\.\S+/.test(loginEmail)) {
+      errors.email = "Digite um e-mail válido";
+    }
+    
+    if (!loginPassword) {
+      errors.password = "Senha é obrigatória";
+    }
+    
+    setLoginErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
+  const validateRegisterForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!regFullName) {
+      errors.fullName = "Nome é obrigatório";
+    } else if (regFullName.length < 3) {
+      errors.fullName = "Nome deve ter pelo menos 3 caracteres";
+    }
+    
+    if (!regPhone) {
+      errors.phone = "Telefone é obrigatório";
+    } else if (regPhone.length < 10) {
+      errors.phone = "Digite um número de telefone válido";
+    }
+    
+    if (!regEmail) {
+      errors.email = "E-mail é obrigatório";
+    } else if (!/\S+@\S+\.\S+/.test(regEmail)) {
+      errors.email = "Digite um e-mail válido";
+    }
+    
+    if (!regPassword) {
+      errors.password = "Senha é obrigatória";
+    } else if (regPassword.length < 6) {
+      errors.password = "Senha deve ter pelo menos 6 caracteres";
+    }
+    
+    if (!regTerms) {
+      errors.terms = "Você deve aceitar os termos e condições";
+    }
+    
+    setRegErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-  const onRegisterSubmit = (data: RegisterFormValues) => {
-    const { terms, ...userData } = data;
-    registerMutation.mutate(userData);
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateLoginForm()) {
+      loginMutation.mutate({
+        email: loginEmail,
+        password: loginPassword
+      });
+    }
+  };
+
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateRegisterForm()) {
+      registerMutation.mutate({
+        fullName: regFullName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword,
+        building: regBuilding
+      });
+    }
   };
 
   return (
@@ -86,73 +143,66 @@ export default function AuthPage() {
             <p className="text-gray-600 mt-2">Sua compra mais inteligente</p>
           </div>
 
-          {/* Login Form */}
-          <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-              <FormField
-                control={loginForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail ou CPF</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Seu e-mail ou CPF" 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          {/* Login Form - Versão simplificada */}
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                E-mail ou CPF
+              </label>
+              <Input
+                id="email"
+                type="text"
+                placeholder="Seu e-mail ou CPF"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
               />
-              <FormField
-                control={loginForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Sua senha" 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {loginErrors.email && (
+                <p className="text-sm font-medium text-red-500">{loginErrors.email}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                Senha
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Sua senha"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
               />
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary-dark"
-                disabled={loginMutation.isPending}
+              {loginErrors.password && (
+                <p className="text-sm font-medium text-red-500">{loginErrors.password}</p>
+              )}
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary-dark"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? <LoadingSpinner size="small" className="mr-2" /> : null}
+              Entrar
+            </Button>
+            
+            <p className="text-center text-sm">
+              <a href="#" className="text-primary hover:text-primary-dark">
+                Esqueci minha senha
+              </a>
+            </p>
+            
+            <div className="pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-primary text-primary hover:bg-primary-light hover:text-white"
+                onClick={() => setMode("register")}
               >
-                {loginMutation.isPending ? <LoadingSpinner size="small" className="mr-2" /> : null}
-                Entrar
+                Criar uma conta
               </Button>
-              <p className="text-center text-sm">
-                <a href="#" className="text-primary hover:text-primary-dark">
-                  Esqueci minha senha
-                </a>
-              </p>
-              <div className="pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary-light hover:text-white"
-                  onClick={() => setMode("register")}
-                >
-                  Criar uma conta
-                </Button>
-              </div>
-            </form>
-          </Form>
+            </div>
+          </form>
         </>
       ) : (
         <>
@@ -169,141 +219,115 @@ export default function AuthPage() {
             <h1 className="text-xl font-bold text-center flex-1 pr-8">Criar uma conta</h1>
           </div>
 
-          {/* Register Form */}
-          <Form {...registerForm}>
-            <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-              <FormField
-                control={registerForm.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome completo</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Seu nome completo" 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          {/* Register Form - Versão simplificada */}
+          <form onSubmit={handleRegisterSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="fullName" className="text-sm font-medium">
+                Nome completo
+              </label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Seu nome completo"
+                value={regFullName}
+                onChange={(e) => setRegFullName(e.target.value)}
               />
-              <FormField
-                control={registerForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="(00) 00000-0000" 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-xs text-gray-600 mt-1">
-                      Você receberá um código de verificação via SMS
-                    </p>
-                  </FormItem>
-                )}
+              {regErrors.fullName && (
+                <p className="text-sm font-medium text-red-500">{regErrors.fullName}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-medium">
+                Telefone
+              </label>
+              <Input
+                id="phone"
+                type="text"
+                placeholder="(00) 00000-0000"
+                value={regPhone}
+                onChange={(e) => setRegPhone(e.target.value)}
               />
-              <FormField
-                control={registerForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="seu@email.com" 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {regErrors.phone && (
+                <p className="text-sm font-medium text-red-500">{regErrors.phone}</p>
+              )}
+              <p className="text-xs text-gray-600">
+                Você receberá um código de verificação via SMS
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="regEmail" className="text-sm font-medium">
+                E-mail
+              </label>
+              <Input
+                id="regEmail"
+                type="email"
+                placeholder="seu@email.com"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
               />
-              <FormField
-                control={registerForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Crie uma senha</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Mínimo 6 caracteres" 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {regErrors.email && (
+                <p className="text-sm font-medium text-red-500">{regErrors.email}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="regPassword" className="text-sm font-medium">
+                Crie uma senha
+              </label>
+              <Input
+                id="regPassword"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
               />
-              <FormField
-                control={registerForm.control}
-                name="building"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prédio/Condomínio (opcional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Nome do seu prédio ou condomínio" 
-                        value={field.value} 
-                        onChange={field.onChange}
-                        onBlur={field.onBlur}
-                        name={field.name}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {regErrors.password && (
+                <p className="text-sm font-medium text-red-500">{regErrors.password}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="building" className="text-sm font-medium">
+                Prédio/Condomínio (opcional)
+              </label>
+              <Input
+                id="building"
+                type="text"
+                placeholder="Nome do seu prédio ou condomínio"
+                value={regBuilding}
+                onChange={(e) => setRegBuilding(e.target.value)}
               />
-              <FormField
-                control={registerForm.control}
-                name="terms"
-                render={({ field }) => (
-                  <FormItem className="flex items-start space-x-3 pt-2">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        id="terms"
-                        className="mt-1 h-4 w-4 text-primary"
-                      />
-                    </FormControl>
-                    <FormLabel htmlFor="terms" className="text-sm text-gray-600">
-                      Concordo com os <a href="#" className="text-primary">Termos de Uso</a> e{" "}
-                      <a href="#" className="text-primary">Política de Privacidade</a>
-                    </FormLabel>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            
+            <div className="flex items-start space-x-3 pt-2">
+              <Checkbox 
+                id="terms"
+                checked={regTerms}
+                onCheckedChange={(checked) => setRegTerms(checked === true)}
+                className="mt-1 h-4 w-4 text-primary"
               />
-              <div className="pt-4">
-                <Button 
-                  type="submit" 
-                  className="w-full bg-primary hover:bg-primary-dark"
-                  disabled={registerMutation.isPending}
-                >
-                  {registerMutation.isPending ? <LoadingSpinner size="small" className="mr-2" /> : null}
-                  Cadastrar
-                </Button>
-              </div>
-            </form>
-          </Form>
+              <label htmlFor="terms" className="text-sm text-gray-600">
+                Concordo com os <a href="#" className="text-primary">Termos de Uso</a> e{" "}
+                <a href="#" className="text-primary">Política de Privacidade</a>
+              </label>
+            </div>
+            {regErrors.terms && (
+              <p className="text-sm font-medium text-red-500">{regErrors.terms}</p>
+            )}
+            
+            <div className="pt-4">
+              <Button 
+                type="submit" 
+                className="w-full bg-primary hover:bg-primary-dark"
+                disabled={registerMutation.isPending}
+              >
+                {registerMutation.isPending ? <LoadingSpinner size="small" className="mr-2" /> : null}
+                Cadastrar
+              </Button>
+            </div>
+          </form>
         </>
       )}
     </div>
