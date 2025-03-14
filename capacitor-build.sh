@@ -1,94 +1,157 @@
 #!/bin/bash
 
-# Script para compilar e preparar o projeto para o Capacitor
+# Script para construir o aplicativo Condor Center para Android e iOS usando Capacitor
 
-# Verificar se o capacitor está instalado
-if ! command -v npx cap &> /dev/null; then
-  echo "Capacitor CLI não encontrado. Verifique se @capacitor/cli está instalado."
-  exit 1
-fi
-
-# Cores para saída
+# Cores para melhor visualização
 GREEN="\033[0;32m"
-BLUE="\033[0;34m"
 YELLOW="\033[0;33m"
 RED="\033[0;31m"
+BLUE="\033[0;34m"
 NC="\033[0m" # No Color
 
-echo -e "${BLUE}=== INICIANDO PROCESSO DE BUILD PARA APLICATIVO CONDOR CENTER ===${NC}"
+echo -e "${BLUE}===== CONSTRUÇÃO DO APLICATIVO CONDOR CENTER =====${NC}"
 
-# Etapa 1: Construir a aplicação web
-echo -e "${YELLOW}[1/5]${NC} Compilando aplicação web..."
+# Verifica se as dependências do Capacitor estão instaladas
+if ! npm list @capacitor/core &> /dev/null; then
+    echo -e "${RED}O Capacitor não está instalado. Execute primeiro ./prepare-mobile-environment.sh${NC}"
+    exit 1
+fi
+
+# Passo 1: Compilar a aplicação web
+echo -e "${YELLOW}Compilando aplicação web...${NC}"
 npm run build
-if [ $? -ne 0 ]; then
-  echo -e "${RED}Erro ao compilar a aplicação web. Verifique os logs acima.${NC}"
-  exit 1
-fi
-echo -e "${GREEN}✓ Aplicação web compilada com sucesso!${NC}"
 
-# Etapa 2: Copiar o build para o diretório do Capacitor
-echo -e "${YELLOW}[2/5]${NC} Sincronizando arquivos com o Capacitor..."
-npx cap sync
 if [ $? -ne 0 ]; then
-  echo -e "${RED}Erro ao sincronizar com o Capacitor. Verifique os logs acima.${NC}"
-  exit 1
+    echo -e "${RED}Falha na compilação da aplicação web. Verifique os erros acima.${NC}"
+    exit 1
 fi
-echo -e "${GREEN}✓ Arquivos sincronizados com o Capacitor!${NC}"
 
-# Etapa 3: Preparar aplicação Android (opcional)
-if [ -d "android" ]; then
-  echo -e "${YELLOW}[3/5]${NC} Atualizando projeto Android..."
-  
-  # Se o ImageMagick estiver disponível, gera automaticamente o ícone adaptativo para Android
-  if command -v convert &> /dev/null; then
-    echo "Gerando ícones adaptativos para Android..."
-    if [ -f "resources/icon.svg" ]; then
-      mkdir -p android/app/src/main/res/mipmap-anydpi-v26
-      ./mobile-assets.sh
+echo -e "${GREEN}✓ Compilação da aplicação web concluída${NC}"
+
+# Passo 2: Copiar recursos (ícones e splash screens) para diretório dist
+echo -e "${YELLOW}Copiando recursos...${NC}"
+RESOURCES_DIR="./resources"
+DIST_RESOURCES="./dist/resources"
+
+if [ -d "$RESOURCES_DIR" ]; then
+    mkdir -p "$DIST_RESOURCES"
+    cp -r "$RESOURCES_DIR"/* "$DIST_RESOURCES"
+    echo -e "${GREEN}✓ Recursos copiados para dist${NC}"
+else
+    echo -e "${RED}Diretório de recursos não encontrado. Execute ./prepare-mobile-environment.sh${NC}"
+    exit 1
+fi
+
+# Passo 3: Executar script de assets (se existir)
+if [ -f "./mobile-assets.sh" ]; then
+    echo -e "${YELLOW}Gerando assets para dispositivos móveis...${NC}"
+    ./mobile-assets.sh
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Falha na geração de assets. Verifique os erros acima.${NC}"
+        exit 1
     fi
-  fi
-  
-  npx cap update android
-  if [ $? -ne 0 ]; then
-    echo -e "${RED}Erro ao atualizar o projeto Android. Verifique os logs acima.${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}✓ Projeto Android atualizado!${NC}"
+    echo -e "${GREEN}✓ Assets gerados com sucesso${NC}"
 else
-  echo -e "${YELLOW}[3/5]${NC} Adicionando plataforma Android..."
-  npx cap add android
-  if [ $? -ne 0 ]; then
-    echo -e "${RED}Erro ao adicionar a plataforma Android. Verifique os logs acima.${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}✓ Plataforma Android adicionada!${NC}"
+    echo -e "${YELLOW}Script mobile-assets.sh não encontrado. Os assets não serão gerados automaticamente.${NC}"
 fi
 
-# Etapa 4: Preparar aplicação iOS (opcional)
-if [ -d "ios" ]; then
-  echo -e "${YELLOW}[4/5]${NC} Atualizando projeto iOS..."
-  npx cap update ios
-  if [ $? -ne 0 ]; then
-    echo -e "${RED}Erro ao atualizar o projeto iOS. Verifique os logs acima.${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}✓ Projeto iOS atualizado!${NC}"
+# Passo 4: Verificar e adicionar as plataformas se não existirem
+echo -e "${YELLOW}Verificando e configurando plataformas...${NC}"
+
+# Verificar se o diretório Android existe
+if [ ! -d "./android" ]; then
+    echo -e "${YELLOW}Adicionando plataforma Android...${NC}"
+    npx cap add android
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Falha ao adicionar plataforma Android. Verifique os erros acima.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Plataforma Android adicionada${NC}"
 else
-  echo -e "${YELLOW}[4/5]${NC} Adicionando plataforma iOS..."
-  npx cap add ios
-  if [ $? -ne 0 ]; then
-    echo -e "${RED}Erro ao adicionar a plataforma iOS. Verifique os logs acima.${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}✓ Plataforma iOS adicionada!${NC}"
+    echo -e "${GREEN}✓ Plataforma Android já existe${NC}"
 fi
 
-# Etapa 5: Abrir IDEs nativas (opcional)
-echo -e "${YELLOW}[5/5]${NC} Próximos passos:"
-echo -e "  Para abrir o projeto Android Studio: ${BLUE}npx cap open android${NC}"
-echo -e "  Para abrir o projeto Xcode: ${BLUE}npx cap open ios${NC}"
-echo -e "  Para executar em Android: ${BLUE}npx cap run android${NC}"
-echo -e "  Para executar em iOS: ${BLUE}npx cap run ios${NC}"
+# Verificar se o diretório iOS existe (apenas no macOS)
+if [ "$(uname)" == "Darwin" ]; then
+    if [ ! -d "./ios" ]; then
+        echo -e "${YELLOW}Adicionando plataforma iOS...${NC}"
+        npx cap add ios
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Falha ao adicionar plataforma iOS. Verifique os erros acima.${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN}✓ Plataforma iOS adicionada${NC}"
+    else
+        echo -e "${GREEN}✓ Plataforma iOS já existe${NC}"
+    fi
+else
+    echo -e "${YELLOW}Sistema não é macOS, a plataforma iOS não será adicionada.${NC}"
+fi
 
-echo -e "\n${GREEN}=== BUILD CONCLUÍDO COM SUCESSO! ===${NC}"
-echo -e "O Condor Center está pronto para ser compilado como aplicativo nativo."
+# Passo 5: Sincronizar alterações com os projetos nativos
+echo -e "${YELLOW}Sincronizando alterações com os projetos nativos...${NC}"
+npx cap sync
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Falha na sincronização. Verifique os erros acima.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Sincronização com projetos nativos concluída${NC}"
+
+# Passo 6: Atualizar permissões do Android
+if [ -d "./android" ] && [ -f "./android-permissions.xml" ]; then
+    echo -e "${YELLOW}Verificando permissões do Android...${NC}"
+    
+    ANDROID_MANIFEST="./android/app/src/main/AndroidManifest.xml"
+    
+    # Aqui seria necessário um script mais complexo para analisar e modificar o XML
+    # Como é complexo manipular XML em um script shell, exibiremos apenas instruções
+    echo -e "${YELLOW}⚠ Para adicionar permissões ao Android, copie manualmente as permissões de android-permissions.xml para $ANDROID_MANIFEST${NC}"
+    echo -e "${YELLOW}  Este processo precisará ser feito manualmente no Android Studio.${NC}"
+else
+    echo -e "${YELLOW}Arquivo android-permissions.xml não encontrado. Verifique as permissões manualmente.${NC}"
+fi
+
+# Passo 7: Configuração para produção
+echo -e "${YELLOW}Verificando configuração para produção...${NC}"
+
+# Verificar se existe um ícone gerado
+if [ -f "./generated-icon.png" ]; then
+    echo -e "${GREEN}✓ Ícone para produção encontrado${NC}"
+else
+    echo -e "${YELLOW}Gerando ícone para produção...${NC}"
+    
+    # Gerar um ícone simplificado se ImageMagick estiver instalado
+    if command -v convert &> /dev/null; then
+        convert -size 1024x1024 -background "#6200EE" -fill white -gravity center -font Arial-Bold -pointsize 200 label:"CC" generated-icon.png
+        echo -e "${GREEN}✓ Ícone para produção gerado${NC}"
+    else
+        echo -e "${YELLOW}⚠ ImageMagick não encontrado. O ícone para produção não será gerado automaticamente.${NC}"
+    fi
+fi
+
+# Passo 8: Instruções finais
+echo -e "\n${BLUE}===== CONSTRUÇÃO CONCLUÍDA =====${NC}"
+echo -e "${GREEN}O aplicativo foi construído com sucesso!${NC}"
+echo -e "\n${YELLOW}Próximos passos:${NC}"
+
+echo -e "${BLUE}Para Android:${NC}"
+echo -e "1. Abra o projeto no Android Studio: ${GREEN}npx cap open android${NC}"
+echo -e "2. Construa o APK no Android Studio: Build > Build Bundle(s) / APK(s) > Build APK(s)"
+echo -e "3. Ou via linha de comando: ${GREEN}cd android && ./gradlew assembleDebug${NC}"
+echo -e "4. O APK estará disponível em: ${GREEN}android/app/build/outputs/apk/debug/app-debug.apk${NC}"
+echo -e "5. Para instalar em dispositivos conectados: ${GREEN}./install-mobile-apps.sh${NC}"
+
+if [ "$(uname)" == "Darwin" ]; then
+    echo -e "\n${BLUE}Para iOS:${NC}"
+    echo -e "1. Abra o projeto no Xcode: ${GREEN}npx cap open ios${NC}"
+    echo -e "2. Configure seu time de desenvolvimento no Xcode"
+    echo -e "3. Conecte um dispositivo iOS ou selecione um simulador"
+    echo -e "4. Clique em 'Run' no Xcode"
+fi
+
+echo -e "\n${BLUE}Para mais informações, consulte:${NC}"
+echo -e "- ${GREEN}README-CONDOR-MOBILE.md${NC} para documentação completa"
+echo -e "- ${GREEN}MOBILE_APP_GUIDE.md${NC} para um guia detalhado de construção e instalação"
+echo -e "- ${GREEN}passos-instalacao-apk.html${NC} para instruções visuais simplificadas"

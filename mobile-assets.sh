@@ -1,110 +1,339 @@
 #!/bin/bash
 
-# Esse script gera assets otimizados para o aplicativo móvel
-# Requer o ImageMagick instalado no sistema
+# Script para gerar assets para aplicativo mobile Condor Center
+# Gera ícones e splash screens em vários tamanhos para Android e iOS
 
-# Verifica se o ImageMagick está instalado
+# Cores para melhor visualização
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+RED="\033[0;31m"
+BLUE="\033[0;34m"
+NC="\033[0m" # No Color
+
+echo -e "${BLUE}===== GERAÇÃO DE ASSETS PARA CONDOR CENTER =====${NC}"
+
+# Verificar se o ImageMagick está instalado
 if ! command -v convert &> /dev/null; then
-  echo "ImageMagick não encontrado. Por favor, instale-o para continuar."
-  echo "No Ubuntu/Debian: sudo apt-get install imagemagick"
-  echo "No macOS: brew install imagemagick"
-  exit 1
+    echo -e "${RED}ImageMagick não encontrado. Este script requer ImageMagick para gerar assets.${NC}"
+    echo -e "${YELLOW}Por favor, instale o ImageMagick:${NC}"
+    echo -e "  - Ubuntu/Debian: sudo apt-get install imagemagick"
+    echo -e "  - macOS: brew install imagemagick"
+    echo -e "  - Windows: Faça o download em https://imagemagick.org/script/download.php"
+    exit 1
 fi
 
-echo "Gerando ícones e splash screens para aplicativos Android e iOS..."
+# Verificar se os arquivos SVG de origem existem
+ICON_SVG="./resources/icon.svg"
+SPLASH_SVG="./resources/splash.svg"
 
-# Cria diretórios se não existirem
-mkdir -p resources/android/icon
-mkdir -p resources/android/splash
-mkdir -p resources/ios/icon
-mkdir -p resources/ios/splash
+if [ ! -f "$ICON_SVG" ]; then
+    echo -e "${RED}Arquivo de ícone não encontrado: $ICON_SVG${NC}"
+    exit 1
+fi
 
-# Função para gerar ícones Android
-generate_android_icons() {
-  echo "Gerando ícones para Android..."
-  
-  # Tamanhos de ícones para Android
-  # mipmap-hdpi: 72x72
-  convert -background none resources/icon.svg -resize 72x72 resources/android/icon/drawable-hdpi-icon.png
-  # mipmap-mdpi: 48x48
-  convert -background none resources/icon.svg -resize 48x48 resources/android/icon/drawable-mdpi-icon.png
-  # mipmap-xhdpi: 96x96
-  convert -background none resources/icon.svg -resize 96x96 resources/android/icon/drawable-xhdpi-icon.png
-  # mipmap-xxhdpi: 144x144
-  convert -background none resources/icon.svg -resize 144x144 resources/android/icon/drawable-xxhdpi-icon.png
-  # mipmap-xxxhdpi: 192x192
-  convert -background none resources/icon.svg -resize 192x192 resources/android/icon/drawable-xxxhdpi-icon.png
-  
-  echo "Ícones Android gerados com sucesso!"
+if [ ! -f "$SPLASH_SVG" ]; then
+    echo -e "${RED}Arquivo de splash screen não encontrado: $SPLASH_SVG${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Arquivos SVG de origem encontrados${NC}"
+
+# Criar diretórios de destino
+echo -e "${YELLOW}Criando diretórios para assets...${NC}"
+
+ANDROID_RES="./android/app/src/main/res"
+IOS_RES="./ios/App/App/Assets.xcassets"
+
+# Se os diretórios de projeto nativo não existirem, criar temporariamente
+if [ ! -d "./android" ]; then
+    echo -e "${YELLOW}⚠ Projeto Android não encontrado. Assets serão gerados em ./android-assets${NC}"
+    ANDROID_RES="./android-assets"
+    mkdir -p "$ANDROID_RES"
+fi
+
+if [ ! -d "./ios" ]; then
+    echo -e "${YELLOW}⚠ Projeto iOS não encontrado. Assets serão gerados em ./ios-assets${NC}"
+    IOS_RES="./ios-assets"
+    mkdir -p "$IOS_RES"
+fi
+
+# Gerar ícones para Android
+echo -e "${YELLOW}Gerando ícones para Android...${NC}"
+
+# Mapeamento das densidades de tela do Android
+declare -A ANDROID_ICONS=(
+    ["mipmap-mdpi"]=48
+    ["mipmap-hdpi"]=72
+    ["mipmap-xhdpi"]=96
+    ["mipmap-xxhdpi"]=144
+    ["mipmap-xxxhdpi"]=192
+)
+
+for DIR in "${!ANDROID_ICONS[@]}"; do
+    SIZE=${ANDROID_ICONS[$DIR]}
+    echo -e "  Gerando ícone ${SIZE}x${SIZE} para $DIR"
+    mkdir -p "${ANDROID_RES}/${DIR}"
+    convert -background none -resize ${SIZE}x${SIZE} "$ICON_SVG" "${ANDROID_RES}/${DIR}/ic_launcher.png"
+    convert -background none -resize ${SIZE}x${SIZE} "$ICON_SVG" "${ANDROID_RES}/${DIR}/ic_launcher_round.png"
+    convert -background none -resize ${SIZE}x${SIZE} "$ICON_SVG" "${ANDROID_RES}/${DIR}/ic_launcher_foreground.png"
+done
+
+echo -e "${GREEN}✓ Ícones Android gerados${NC}"
+
+# Gerar ícone para a Play Store
+echo -e "${YELLOW}Gerando ícone para a Play Store...${NC}"
+mkdir -p "${ANDROID_RES}/../playstore"
+convert -background none -resize 512x512 "$ICON_SVG" "${ANDROID_RES}/../playstore/icon.png"
+
+# Gerar ícones para iOS
+if [ "$(uname)" == "Darwin" ] || [ -d "./ios" ]; then
+    echo -e "${YELLOW}Gerando ícones para iOS...${NC}"
+    
+    mkdir -p "${IOS_RES}/AppIcon.appiconset"
+    
+    # Mapeamento dos tamanhos de ícone iOS
+    declare -A IOS_ICONS=(
+        ["Icon-App-20x20@1x.png"]=20
+        ["Icon-App-20x20@2x.png"]=40
+        ["Icon-App-20x20@3x.png"]=60
+        ["Icon-App-29x29@1x.png"]=29
+        ["Icon-App-29x29@2x.png"]=58
+        ["Icon-App-29x29@3x.png"]=87
+        ["Icon-App-40x40@1x.png"]=40
+        ["Icon-App-40x40@2x.png"]=80
+        ["Icon-App-40x40@3x.png"]=120
+        ["Icon-App-60x60@2x.png"]=120
+        ["Icon-App-60x60@3x.png"]=180
+        ["Icon-App-76x76@1x.png"]=76
+        ["Icon-App-76x76@2x.png"]=152
+        ["Icon-App-83.5x83.5@2x.png"]=167
+        ["ItunesArtwork@2x.png"]=1024
+    )
+    
+    for ICON_NAME in "${!IOS_ICONS[@]}"; do
+        SIZE=${IOS_ICONS[$ICON_NAME]}
+        echo -e "  Gerando ícone ${SIZE}x${SIZE} para iOS: $ICON_NAME"
+        convert -background none -resize ${SIZE}x${SIZE} "$ICON_SVG" "${IOS_RES}/AppIcon.appiconset/${ICON_NAME}"
+    done
+    
+    # Criar arquivo Contents.json para o catálogo de ícones
+    cat > "${IOS_RES}/AppIcon.appiconset/Contents.json" << EOL
+{
+  "images" : [
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "83.5x83.5",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-83.5x83.5@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "1024x1024",
+      "idiom" : "ios-marketing",
+      "filename" : "ItunesArtwork@2x.png",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
 }
+EOL
+    
+    echo -e "${GREEN}✓ Ícones iOS gerados${NC}"
+else
+    echo -e "${YELLOW}Sistema não é macOS ou projeto iOS não encontrado. Ícones iOS não serão gerados.${NC}"
+fi
 
-# Função para gerar splash screens Android
-generate_android_splash() {
-  echo "Gerando splash screens para Android..."
-  
-  # Tamanhos de splash para Android
-  convert resources/splash.svg -resize 320x480 resources/android/splash/drawable-port-ldpi-screen.png
-  convert resources/splash.svg -resize 480x800 resources/android/splash/drawable-port-mdpi-screen.png
-  convert resources/splash.svg -resize 720x1280 resources/android/splash/drawable-port-hdpi-screen.png
-  convert resources/splash.svg -resize 960x1600 resources/android/splash/drawable-port-xhdpi-screen.png
-  convert resources/splash.svg -resize 1280x1920 resources/android/splash/drawable-port-xxhdpi-screen.png
-  convert resources/splash.svg -resize 1920x2560 resources/android/splash/drawable-port-xxxhdpi-screen.png
-  
-  echo "Splash screens Android gerados com sucesso!"
+# Gerar splash screens para Android
+echo -e "${YELLOW}Gerando splash screens para Android...${NC}"
+
+# Criar splashes em diferentes resoluções para Android
+declare -A ANDROID_SPLASHES=(
+    ["drawable-land-mdpi"]=480x320
+    ["drawable-land-hdpi"]=800x480
+    ["drawable-land-xhdpi"]=1280x720
+    ["drawable-land-xxhdpi"]=1600x960
+    ["drawable-land-xxxhdpi"]=1920x1280
+    ["drawable-port-mdpi"]=320x480
+    ["drawable-port-hdpi"]=480x800
+    ["drawable-port-xhdpi"]=720x1280
+    ["drawable-port-xxhdpi"]=960x1600
+    ["drawable-port-xxxhdpi"]=1280x1920
+)
+
+for DIR in "${!ANDROID_SPLASHES[@]}"; do
+    SIZE=${ANDROID_SPLASHES[$DIR]}
+    echo -e "  Gerando splash ${SIZE} para $DIR"
+    mkdir -p "${ANDROID_RES}/${DIR}"
+    convert -background none -resize ${SIZE} -gravity center -extent ${SIZE} "$SPLASH_SVG" "${ANDROID_RES}/${DIR}/splash.png"
+done
+
+echo -e "${GREEN}✓ Splash screens Android geradas${NC}"
+
+# Gerar splash screens para iOS
+if [ "$(uname)" == "Darwin" ] || [ -d "./ios" ]; then
+    echo -e "${YELLOW}Gerando splash screens para iOS...${NC}"
+    
+    mkdir -p "${IOS_RES}/LaunchImage.imageset"
+    
+    # Tamanhos para splash screens do iOS
+    declare -A IOS_SPLASHES=(
+        ["LaunchImage.png"]=2732x2732
+        ["LaunchImage@2x.png"]=2732x2732
+        ["LaunchImage@3x.png"]=2732x2732
+    )
+    
+    for SPLASH_NAME in "${!IOS_SPLASHES[@]}"; do
+        SIZE=${IOS_SPLASHES[$SPLASH_NAME]}
+        echo -e "  Gerando splash ${SIZE} para iOS: $SPLASH_NAME"
+        convert -background none -resize ${SIZE} -gravity center -extent ${SIZE} "$SPLASH_SVG" "${IOS_RES}/LaunchImage.imageset/${SPLASH_NAME}"
+    done
+    
+    # Criar arquivo Contents.json para o catálogo de splash screens
+    cat > "${IOS_RES}/LaunchImage.imageset/Contents.json" << EOL
+{
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage.png",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@3x.png",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
 }
+EOL
+    
+    echo -e "${GREEN}✓ Splash screens iOS geradas${NC}"
+else
+    echo -e "${YELLOW}Sistema não é macOS ou projeto iOS não encontrado. Splash screens iOS não serão geradas.${NC}"
+fi
 
-# Função para gerar ícones iOS
-generate_ios_icons() {
-  echo "Gerando ícones para iOS..."
-  
-  # Tamanhos de ícones para iOS
-  convert -background none resources/icon.svg -resize 20x20 resources/ios/icon/icon-20.png
-  convert -background none resources/icon.svg -resize 40x40 resources/ios/icon/icon-20@2x.png
-  convert -background none resources/icon.svg -resize 60x60 resources/ios/icon/icon-20@3x.png
-  convert -background none resources/icon.svg -resize 29x29 resources/ios/icon/icon-29.png
-  convert -background none resources/icon.svg -resize 58x58 resources/ios/icon/icon-29@2x.png
-  convert -background none resources/icon.svg -resize 87x87 resources/ios/icon/icon-29@3x.png
-  convert -background none resources/icon.svg -resize 40x40 resources/ios/icon/icon-40.png
-  convert -background none resources/icon.svg -resize 80x80 resources/ios/icon/icon-40@2x.png
-  convert -background none resources/icon.svg -resize 120x120 resources/ios/icon/icon-40@3x.png
-  convert -background none resources/icon.svg -resize 120x120 resources/ios/icon/icon-60@2x.png
-  convert -background none resources/icon.svg -resize 180x180 resources/ios/icon/icon-60@3x.png
-  convert -background none resources/icon.svg -resize 76x76 resources/ios/icon/icon-76.png
-  convert -background none resources/icon.svg -resize 152x152 resources/ios/icon/icon-76@2x.png
-  convert -background none resources/icon.svg -resize 167x167 resources/ios/icon/icon-83.5@2x.png
-  convert -background none resources/icon.svg -resize 1024x1024 resources/ios/icon/icon-1024.png
-  
-  echo "Ícones iOS gerados com sucesso!"
-}
+# Gerar um ícone para a web
+echo -e "${YELLOW}Gerando ícone para a web...${NC}"
+convert -background none -resize 512x512 "$ICON_SVG" "generated-icon.png"
+echo -e "${GREEN}✓ Ícone web gerado${NC}"
 
-# Função para gerar splash screens iOS
-generate_ios_splash() {
-  echo "Gerando splash screens para iOS..."
-  
-  # Tamanhos de splash para iOS
-  convert resources/splash.svg -resize 640x1136 resources/ios/splash/Default-568h@2x~iphone.png
-  convert resources/splash.svg -resize 750x1334 resources/ios/splash/Default-667h.png
-  convert resources/splash.svg -resize 1242x2208 resources/ios/splash/Default-736h.png
-  convert resources/splash.svg -resize 2208x1242 resources/ios/splash/Default-Landscape-736h.png
-  convert resources/splash.svg -resize 2732x2732 resources/ios/splash/Default-Landscape@~ipadpro.png
-  convert resources/splash.svg -resize 2732x2732 resources/ios/splash/Default-Portrait@~ipadpro.png
-  convert resources/splash.svg -resize 2048x1536 resources/ios/splash/Default-Landscape@2x~ipad.png
-  convert resources/splash.svg -resize 1024x768 resources/ios/splash/Default-Landscape~ipad.png
-  convert resources/splash.svg -resize 1536x2048 resources/ios/splash/Default-Portrait@2x~ipad.png
-  convert resources/splash.svg -resize 768x1024 resources/ios/splash/Default-Portrait~ipad.png
-  convert resources/splash.svg -resize 640x960 resources/ios/splash/Default@2x~iphone.png
-  convert resources/splash.svg -resize 320x480 resources/ios/splash/Default~iphone.png
-  convert resources/splash.svg -resize 2732x2732 resources/ios/splash/Default@2x~universal~anyany.png
-  
-  echo "Splash screens iOS gerados com sucesso!"
-}
+echo -e "\n${BLUE}===== GERAÇÃO DE ASSETS CONCLUÍDA =====${NC}"
+echo -e "${GREEN}Todos os assets necessários foram gerados com sucesso!${NC}"
 
-# Executa as funções
-echo "======= INICIALIZANDO GERAÇÃO DE RECURSOS MÓVEIS ======="
-generate_android_icons
-generate_android_splash
-generate_ios_icons
-generate_ios_splash
-echo "======= GERAÇÃO DE RECURSOS CONCLUÍDA ======="
-echo "Os ícones e splash screens foram gerados com sucesso!"
-echo "Verifique as pastas resources/android e resources/ios"
+# Instruções para uso dos assets temporários
+if [ ! -d "./android" ] || [ ! -d "./ios" ]; then
+    echo -e "\n${YELLOW}Nota: Alguns assets foram gerados em diretórios temporários porque os projetos nativos ainda não existem.${NC}"
+    echo -e "${YELLOW}Quando executar 'npx cap add android' ou 'npx cap add ios', esses assets terão que ser copiados manualmente.${NC}"
+fi
