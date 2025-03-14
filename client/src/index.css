@@ -9,5 +9,43 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    /* Prevent overscroll bounce effect on mobile */
+    overscroll-behavior: none;
+    /* Improve touch interactions */
+    touch-action: manipulation;
+  }
+}
+
+/* Mobile device optimizations */
+html {
+  /* Prevent font size adjustments on orientation changes */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Native app specific styling */
+.native-app {
+  /* Remove highlight tap effect */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent text selection */
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* iOS specific styles */
+.ios-app {
+  /* Fix for notch interference */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Animation optimizations for mobile */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

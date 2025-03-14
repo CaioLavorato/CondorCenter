@@ -3,178 +3,228 @@ import { useLocation } from "wouter";
 import { useScanner } from "@/hooks/use-scanner";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import ProductFoundPopup from "@/components/scan/product-found-popup";
-import { ArrowLeft, Search } from "lucide-react";
+import { useMobileDevice } from "@/hooks/use-mobile-device";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { BarcodeScanner } from "@/components/ui/barcode-scanner";
+import { getQueryFn } from "@/lib/queryClient";
+import { ChevronLeft, Scan, ShoppingCart } from "lucide-react";
 import { Product } from "@shared/schema";
+import { formatCurrency } from "@/lib/utils";
 
 export default function ScanPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const { initScanner, stopScanner, scanBarcode } = useScanner();
-  const { addToCart } = useCart();
+  const { deviceInfo } = useMobileDevice();
+  const { addItem } = useCart();
+  const [barcode, setBarcode] = useState<string | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   
-  const [manualBarcode, setManualBarcode] = useState("");
-  const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  // Hook personalizado para scanner de códigos de barras
+  const { videoRef, scanning, startScanner, stopScanner, scanWithCamera } = useScanner({
+    continuous: false,
+    onDetected: (result) => setBarcode(result)
+  });
   
-  // Initialize camera when component mounts
+  // Consulta o produto com base no código de barras escaneado
+  const { 
+    data: product, 
+    isLoading, 
+    isError, 
+    refetch 
+  } = useQuery<Product | undefined, Error>({
+    queryKey: ['/api/products/barcode', barcode],
+    queryFn: getQueryFn({ on401: "throw" }),
+    enabled: !!barcode
+  });
+  
+  // Inicia o scanner quando o componente é montado
   useEffect(() => {
-    const startScanner = async () => {
-      try {
-        if (videoRef.current) {
-          await initScanner(videoRef.current, handleBarcodeScan);
-        }
-      } catch (error) {
-        toast({
-          title: "Erro ao iniciar câmera",
-          description: "Verifique se você concedeu permissão de acesso à câmera.",
-          variant: "destructive",
-        });
-      }
-    };
+    if (deviceInfo.isNative) {
+      // Em ambiente nativo, use a câmera nativa
+      scanWithCamera();
+    } else {
+      // Em ambiente web, use o scanner baseado em vídeo
+      startScanner();
+    }
     
-    startScanner();
-    
-    // Cleanup when component unmounts
     return () => {
       stopScanner();
     };
+  }, [deviceInfo.isNative, startScanner, stopScanner, scanWithCamera]);
+  
+  // Limpa o código de barras quando se desmonta o componente
+  useEffect(() => {
+    return () => {
+      setBarcode(null);
+    };
   }, []);
   
-  const handleBarcodeScan = async (barcode: string) => {
-    try {
-      const product = await scanBarcode(barcode);
-      if (product) {
-        setScannedProduct(product);
-        setQuantity(1);
-        setIsPopupVisible(true);
-      }
-    } catch (error) {
-      toast({
-        title: "Produto não encontrado",
-        description: "O código de barras escaneado não corresponde a nenhum produto.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleManualSearch = async () => {
-    if (!manualBarcode.trim()) {
-      toast({
-        title: "Código em branco",
-        description: "Por favor, insira um código de barras válido.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Adiciona o produto ao carrinho
+  const handleAddToCart = async () => {
+    if (!product) return;
+    
+    setIsAddingToCart(true);
     
     try {
-      const product = await scanBarcode(manualBarcode);
-      if (product) {
-        setScannedProduct(product);
-        setQuantity(1);
-        setIsPopupVisible(true);
-      }
-    } catch (error) {
-      toast({
-        title: "Produto não encontrado",
-        description: "O código de barras inserido não corresponde a nenhum produto.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1) {
-      setQuantity(newQuantity);
-    }
-  };
-  
-  const handleAddToCart = () => {
-    if (scannedProduct) {
-      addToCart(scannedProduct, quantity);
+      await addItem(product.id, 1);
       toast({
         title: "Produto adicionado",
-        description: `${scannedProduct.name} foi adicionado ao carrinho.`,
+        description: `${product.name} foi adicionado ao seu carrinho.`,
       });
-      setIsPopupVisible(false);
-    }
-  };
-  
-  const handleBuyNow = () => {
-    if (scannedProduct) {
-      addToCart(scannedProduct, quantity);
+      
+      // Opcional: redireciona para o carrinho após adicionar o produto
       navigate("/cart");
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o produto ao carrinho.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingToCart(false);
     }
   };
   
-  const closePopup = () => {
-    setIsPopupVisible(false);
+  // Reinicia o scanner
+  const handleScanAgain = () => {
+    setBarcode(null);
+    if (deviceInfo.isNative) {
+      scanWithCamera();
+    } else {
+      startScanner();
+    }
   };
   
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="bg-primary text-white p-4 flex items-center">
-        <Button variant="ghost" size="icon" className="mr-2 text-white" onClick={() => navigate("/")}>
-          <ArrowLeft className="h-6 w-6" />
+    <div className="container max-w-md mx-auto py-6 px-4">
+      <div className="flex items-center mb-6">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <ChevronLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-semibold">Escanear produto</h1>
-      </header>
+        <h1 className="text-2xl font-bold flex-1 text-center">Escanear Produto</h1>
+      </div>
       
-      <main className="flex-1 flex flex-col">
-        {/* Camera Viewfinder */}
-        <div className="relative flex-1 bg-black">
-          <video
-            ref={videoRef}
-            className="absolute inset-0 h-full w-full object-cover"
-            autoPlay
-            playsInline
-            muted
-          />
+      {!barcode ? (
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="aspect-square relative rounded-md overflow-hidden bg-secondary">
+                {scanning ? (
+                  <>
+                    <BarcodeScanner onScan={setBarcode} isScanning={scanning} />
+                    <video
+                      ref={videoRef}
+                      className="w-full h-full object-cover"
+                      muted
+                      autoPlay
+                      playsInline
+                    />
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <Scan className="h-12 w-12 text-primary mb-2" />
+                    <p className="text-center text-sm text-muted-foreground">
+                      Scanner parado. Clique para iniciar.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                onClick={scanning ? stopScanner : startScanner}
+              >
+                {scanning ? "Parar Scanner" : "Iniciar Scanner"}
+              </Button>
+            </CardFooter>
+          </Card>
           
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* Scanning frame */}
-            <div className="w-4/5 h-32 border-2 border-primary rounded"></div>
-          </div>
-        </div>
-        
-        {/* Manual entry option */}
-        <div className="p-4 bg-white">
-          <p className="text-sm text-neutral-500 mb-2">
-            Não consegue escanear? Digite o código manualmente:
-          </p>
-          <div className="flex">
-            <Input
-              type="text"
-              placeholder="Digite o código de barras"
-              className="flex-1 rounded-r-none"
-              value={manualBarcode}
-              onChange={(e) => setManualBarcode(e.target.value)}
-            />
-            <Button
-              className="rounded-l-none"
-              onClick={handleManualSearch}
+          {deviceInfo.isNative && (
+            <Button 
+              variant="outline" 
+              className="w-full mt-4"
+              onClick={scanWithCamera}
             >
-              <Search className="h-5 w-5" />
+              Usar Câmera do Dispositivo
             </Button>
-          </div>
+          )}
         </div>
-      </main>
-      
-      {/* Product found popup */}
-      {isPopupVisible && scannedProduct && (
-        <ProductFoundPopup
-          product={scannedProduct}
-          quantity={quantity}
-          onQuantityChange={handleQuantityChange}
-          onAddToCart={handleAddToCart}
-          onBuyNow={handleBuyNow}
-          onClose={closePopup}
-        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Produto Escaneado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingSpinner size="medium" />
+              </div>
+            ) : isError ? (
+              <div className="text-center py-8">
+                <p className="text-destructive mb-4">
+                  Produto não encontrado ou erro ao carregar informações.
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Código: {barcode}
+                </p>
+                <Button variant="outline" onClick={() => refetch()}>
+                  Tentar Novamente
+                </Button>
+              </div>
+            ) : product ? (
+              <div className="space-y-4">
+                {product.imageUrl && (
+                  <div className="aspect-square rounded-md overflow-hidden bg-background">
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-lg font-medium">{product.name}</h3>
+                  <p className="text-2xl font-bold text-primary">
+                    {formatCurrency(product.price)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Código: {product.barcode}
+                  </p>
+                  {product.description && (
+                    <p className="text-sm mt-2">{product.description}</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <Button 
+              className="w-full"
+              disabled={isLoading || isError || isAddingToCart || !product}
+              onClick={handleAddToCart}
+            >
+              {isAddingToCart ? (
+                <LoadingSpinner size="small" />
+              ) : (
+                <>
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Adicionar ao Carrinho
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={handleScanAgain}
+            >
+              Escanear Outro Produto
+            </Button>
+          </CardFooter>
+        </Card>
       )}
     </div>
   );

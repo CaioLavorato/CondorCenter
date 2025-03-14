@@ -1,38 +1,50 @@
 import { App } from '@capacitor/app';
-import { SplashScreen } from '@capacitor/splash-screen';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Device } from '@capacitor/device';
+import { LocalNotifications, ScheduleOptions } from '@capacitor/local-notifications';
+import { SplashScreen } from '@capacitor/splash-screen';
 
-// Verifica se estamos em ambiente Capacitor (aplicativo nativo)
+// Verifica se a aplicação está rodando como app nativo
 export const isNativeApp = () => {
-  return typeof window !== 'undefined' && 
-         'Capacitor' in window && 
-         (window as any).Capacitor?.isNative;
+  return window.location.protocol === 'capacitor:';
 };
 
-// Inicializa o app e oculta a splash screen
+// Inicializa o app nativo, oculta a splash screen, etc.
 export const initApp = async () => {
   if (isNativeApp()) {
-    // Adiciona listener para o botão de voltar do Android
-    App.addListener('backButton', ({ canGoBack }) => {
-      if (!canGoBack) {
-        App.exitApp();
-      } else {
-        window.history.back();
-      }
-    });
-
-    // Oculta a splash screen após a inicialização
-    await SplashScreen.hide();
+    try {
+      // Oculta a splash screen após carregar o app
+      await SplashScreen.hide();
+      
+      // Configura listeners para eventos do app
+      App.addListener('appStateChange', ({ isActive }) => {
+        console.log('App state changed. Is active: ', isActive);
+      });
+      
+      App.addListener('backButton', () => {
+        console.log('Back button pressed');
+        // Você pode adicionar uma lógica personalizada para o botão voltar
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao inicializar aplicativo nativo:', error);
+      return false;
+    }
   }
+  return false;
 };
 
-// Solicita permissão para notificações
+// Solicita permissão para enviar notificações 
 export const requestNotificationPermission = async () => {
   if (isNativeApp()) {
-    const permissionStatus = await LocalNotifications.requestPermissions();
-    return permissionStatus.display === 'granted';
+    try {
+      const result = await LocalNotifications.requestPermissions();
+      return result.display === 'granted';
+    } catch (error) {
+      console.error('Erro ao solicitar permissão para notificações:', error);
+      return false;
+    }
   }
   return false;
 };
@@ -40,21 +52,33 @@ export const requestNotificationPermission = async () => {
 // Envia uma notificação local
 export const sendLocalNotification = async (title: string, body: string) => {
   if (isNativeApp()) {
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          title,
-          body,
-          id: new Date().getTime(),
-          sound: undefined,
-          schedule: { at: new Date(Date.now() + 1000) }
-        }
-      ]
-    });
+    try {
+      const notifOptions: ScheduleOptions = {
+        notifications: [
+          {
+            title,
+            body,
+            id: new Date().getTime(),
+            schedule: { at: new Date(Date.now() + 1000) },
+            sound: undefined,
+            attachments: undefined,
+            actionTypeId: "",
+            extra: null
+          }
+        ]
+      };
+      
+      await LocalNotifications.schedule(notifOptions);
+      return true;
+    } catch (error) {
+      console.error('Erro ao enviar notificação local:', error);
+      return false;
+    }
   }
+  return false;
 };
 
-// Captura uma imagem da câmera (pode ser usada para escanear códigos de barras)
+// Captura imagem da câmera ou galeria
 export const captureImage = async () => {
   if (isNativeApp()) {
     try {
@@ -62,27 +86,26 @@ export const captureImage = async () => {
         quality: 90,
         allowEditing: false,
         resultType: CameraResultType.Uri,
-        source: CameraSource.Camera,
-        correctOrientation: true
+        source: CameraSource.Prompt
       });
       
       return image.webPath;
-    } catch (e) {
-      console.error('Erro ao capturar imagem:', e);
+    } catch (error) {
+      console.error('Erro ao capturar imagem:', error);
       return null;
     }
   }
   return null;
 };
 
-// Obter informações do dispositivo
+// Obtém informações do dispositivo
 export const getDeviceInfo = async () => {
   if (isNativeApp()) {
     try {
       const info = await Device.getInfo();
       return info;
-    } catch (e) {
-      console.error('Erro ao obter informações do dispositivo:', e);
+    } catch (error) {
+      console.error('Erro ao obter informações do dispositivo:', error);
       return null;
     }
   }

@@ -1,7 +1,5 @@
-import { useRef, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Camera, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Scan } from "lucide-react";
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -9,133 +7,113 @@ interface BarcodeScannerProps {
 }
 
 export function BarcodeScanner({ onScan, isScanning }: BarcodeScannerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hasCamera, setHasCamera] = useState(true);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   
-  // Start camera stream
+  // Efeito visual de escaneamento
   useEffect(() => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setHasCamera(false);
-      setErrorMessage("Seu dispositivo não suporta acesso à câmera");
-      return;
-    }
-
-    let stream: MediaStream | null = null;
-
-    async function setupCamera() {
-      try {
-        const constraints = {
-          video: {
-            facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        };
-        
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-        
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play();
-            setIsVideoPlaying(true);
-          };
-        }
-      } catch (err) {
-        setHasCamera(false);
-        setErrorMessage("Não foi possível acessar a câmera");
-        console.error("Error accessing camera:", err);
+    if (!isScanning || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Configuração inicial
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    
+    let scanLineY = 0;
+    let direction = 1; // 1 para baixo, -1 para cima
+    let animationFrameId: number;
+    
+    // Função de animação
+    const animate = () => {
+      // Limpa o canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Desenha retângulo de alvo para escaneamento
+      const targetWidth = canvas.width * 0.7;
+      const targetHeight = canvas.height * 0.5;
+      const targetX = (canvas.width - targetWidth) / 2;
+      const targetY = (canvas.height - targetHeight) / 2;
+      
+      // Desenha cantos
+      const cornerSize = 20;
+      ctx.strokeStyle = "#6200EE";
+      ctx.lineWidth = 4;
+      
+      // Canto superior esquerdo
+      ctx.beginPath();
+      ctx.moveTo(targetX, targetY + cornerSize);
+      ctx.lineTo(targetX, targetY);
+      ctx.lineTo(targetX + cornerSize, targetY);
+      ctx.stroke();
+      
+      // Canto superior direito
+      ctx.beginPath();
+      ctx.moveTo(targetX + targetWidth - cornerSize, targetY);
+      ctx.lineTo(targetX + targetWidth, targetY);
+      ctx.lineTo(targetX + targetWidth, targetY + cornerSize);
+      ctx.stroke();
+      
+      // Canto inferior esquerdo
+      ctx.beginPath();
+      ctx.moveTo(targetX, targetY + targetHeight - cornerSize);
+      ctx.lineTo(targetX, targetY + targetHeight);
+      ctx.lineTo(targetX + cornerSize, targetY + targetHeight);
+      ctx.stroke();
+      
+      // Canto inferior direito
+      ctx.beginPath();
+      ctx.moveTo(targetX + targetWidth - cornerSize, targetY + targetHeight);
+      ctx.lineTo(targetX + targetWidth, targetY + targetHeight);
+      ctx.lineTo(targetX + targetWidth, targetY + targetHeight - cornerSize);
+      ctx.stroke();
+      
+      // Desenha linha de escaneamento
+      const scanLine = targetY + scanLineY;
+      const gradient = ctx.createLinearGradient(0, scanLine - 5, 0, scanLine + 5);
+      gradient.addColorStop(0, "rgba(98, 0, 238, 0)");
+      gradient.addColorStop(0.5, "rgba(98, 0, 238, 0.8)");
+      gradient.addColorStop(1, "rgba(98, 0, 238, 0)");
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(targetX, scanLine - 2, targetWidth, 4);
+      
+      // Atualiza posição da linha de escaneamento
+      scanLineY += 2 * direction;
+      
+      // Inverte direção ao atingir os limites
+      if (scanLineY > targetHeight || scanLineY < 0) {
+        direction *= -1;
       }
-    }
-
-    if (isScanning) {
-      setupCamera();
-    }
-
+      
+      // Continua animação se ainda estiver escaneando
+      if (isScanning) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+    
+    // Inicia animação
+    animationFrameId = requestAnimationFrame(animate);
+    
     // Cleanup
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      setIsVideoPlaying(false);
+      cancelAnimationFrame(animationFrameId);
     };
   }, [isScanning]);
-
-  // Mock barcode recognition - in a real app, you'd use a barcode scanning library
-  useEffect(() => {
-    if (!isScanning || !isVideoPlaying) return;
-
-    // In a real implementation, you would connect to a barcode scanning library
-    // For demonstration, we'll simulate a barcode scan after a short delay
-    const timeout = setTimeout(() => {
-      // Generate a random barcode from our sample products
-      const sampleBarcodes = [
-        "7891234567890", // Refrigerante Cola 2L
-        "7891234567891", // Pão de Forma Integral
-        "7891234567892", // Leite Integral 1L
-        "7891234567893", // Café em Pó 500g
-        "7891234567894", // Arroz Branco 5kg
-      ];
-      
-      const randomBarcode = sampleBarcodes[Math.floor(Math.random() * sampleBarcodes.length)];
-      onScan(randomBarcode);
-    }, 2000);
-
-    return () => clearTimeout(timeout);
-  }, [isScanning, isVideoPlaying, onScan]);
-
-  if (!hasCamera) {
-    return (
-      <div className="bg-black rounded-xl w-full h-72 flex items-center justify-center text-white p-4 text-center">
-        <div>
-          <X className="h-12 w-12 mx-auto mb-2 text-red-500" />
-          <p>{errorMessage}</p>
-          <Button 
-            variant="outline"
-            className="mt-4 bg-white text-primary border-white" 
-            onClick={() => onScan("7891234567890")}
-          >
-            Simular escaneamento
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
-    <div className="relative bg-black rounded-xl overflow-hidden h-72 w-full">
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
-        playsInline
-        muted
-      />
-      <canvas ref={canvasRef} className="hidden" />
-      
-      {/* Viewfinder overlay */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        {!isVideoPlaying ? (
-          <LoadingSpinner size="large" className="text-white" />
-        ) : (
-          <div className="relative">
-            <div className="w-48 h-48 border-2 border-white rounded-lg"></div>
-            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-secondary rounded-tl-lg"></div>
-            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-secondary rounded-tr-lg"></div>
-            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-secondary rounded-bl-lg"></div>
-            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-secondary rounded-br-lg"></div>
-          </div>
-        )}
-      </div>
-      
-      {/* Instructions */}
-      <div className="absolute bottom-4 left-0 right-0 text-center">
-        <p className="text-white text-sm font-medium">
-          Posicione o código de barras do produto
-        </p>
-      </div>
+    <div className="absolute inset-0 z-10 pointer-events-none">
+      {isScanning ? (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center">
+          <Scan className="h-12 w-12 text-primary animate-pulse" />
+        </div>
+      )}
     </div>
   );
 }
