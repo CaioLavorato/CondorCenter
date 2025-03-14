@@ -1,0 +1,137 @@
+Roteiro Estrutura Aplicativo Condor Center – Step One
+Fase 1: Cadastro, Compras e Estrutura Inicial (Janeiro a Fevereiro)
+Objetivo: Lançar a versão inicial do app com funcionalidades básicas, para lançamento do projeto. Tela de Cadastro e Login
+Cadastro, campos obrigatórios:
+1.
+Nome completo.
+2.
+Telefone (com verificação por código SMS).
+3.
+E-mail (ou validação).
+4.
+Aceite de termos e condições.
+Login:
+1.
+Campos: e-mail/CPF e senha.
+2.
+Botão “Esqueci minha senha” (redefinição por e-mail).
+Tela Inicial (Home)
+Objetivo: Centralizar as funções principais com usabilidade simples. Identificação:
+1.
+Nome do usuário – Olá, Fulano de tal
+2.
+Nome do Prédio
+Comunicação:
+1.
+Banner – Carrossel 3
+Compras / Barra inferior
+1.
+Atalho para escanear produtos.
+2.
+Destaque visual para facilitar o acesso.
+Suporte / Whats – identificar o melhor locar para aplicação na Home
+1.
+Botão que direciona o usuário para nossa central de relacionamento - WhatsApp
+2.
+Destaque visual para facilitar o acesso.
+Notificações (Sininho):
+1.
+Atualizações sobre promoções, status de pagamentos ou novidades.
+2.
+Contador com número de notificações pendentes.
+Perfil/Configurações:
+1.
+Ajustes de dados pessoais, completar cadastro, métodos de pagamentos e preferencias.
+Fluxo de Compra no Minimercado
+Escanear Código de Barras:
+2.
+1Uso da câmera para escanear o código de barras do produto.
+3.
+Detalhes do produto exibidos na tela: Nome, preço, descrição.
+4.
+Botão “Adicionar ao Carrinho” ou “Comprar Agora”.
+Carrinho de Compras:
+1.
+Lista dos itens escaneados.
+2.
+Total parcial do pagamento.
+3.
+Botão “Finalizar Compra”.
+Tela de Pagamento:
+1.
+Opção de cadastrar ou selecionar método de pagamento (PIX ou cartão de crédito).
+2.
+Confirmação do valor total.
+3.
+Botão “Confirmar Pagamento”.
+Tela de Confirmação:
+1.
+Mensagem de sucesso do pagamento.
+2.
+Botão “Ver Histórico de Compras”.*
+Tela de Pagamento Gerenciamento de Métodos de Pagamento:
+1.
+Opção de cadastrar novo cartão de crédito: Nome do titular, número, validade. CVV Integração com o sistema PIX (chave ou QR code gerado no checkout).
+2.
+Usabilidade Simples:
+3.
+Interface limpa, com ícones intuitivos para adicionar, editar ou remover métodos de pagamento.
+4.
+Botão “Definir como método preferido”.*
+Considerações de Design Estilo Visual:
+1.
+Moderno e Minimalista: Utilize cores neutras como base (branco, cinza) com elementos de destaque em tons de roxo e laranja (cores da marca).
+2.
+Ícones Simples e Intuitivos: Para navegação e funções principais, vamos buscar ícones universais (carrinho de compras, sininho, câmera, etc.).
+UX:
+1.
+Foco em Simplicidade: Todas as ações devem ser realizadas em 2-3 cliques.
+2.
+Tamanhos de Fonte e Botões: Garanta que os botões sejam grandes e fáceis de clicar, otimizados para dispositivos móveis.
+Elementos de Feedback:
+1.
+Mensagens Visuais: Confirmações, erros ou notificações devem aparecer imediatamente após a ação do usuário (ex.: “Pagamento confirmado!”).
+2.
+Progresso Visual: Use indicadores visuais para etapas de compra (ex.: barras de progresso no checkout).( não sei se será possível nesta 1° fase)
+Ferramentas e Integrações Necessárias
+1.
+Câmera: Para leitura de códigos de barras.
+2.
+Gateway de Pagamento: Integração com soluções de PIX e cartão de crédito (Será a própria da glik, certo?)
+3.
+Notificações Push: Firebase Cloud Messaging (FCM) para enviar notificações em tempo real.
+4.
+Banco de Dados: Para armazenamento de informações de usuários, produtos e compras.
+Funcionalidades Principais fase 1.
+Cadastro e Login:
+1.
+Novos usuários (CPF, nome, email, Telefone, Cadastro de senha)
+2.
+Código de confirmação: SMS, Whats ou E-mail*
+3.
+Primeiro Acesso: Pop Up*: Lembre-se de completar seu cadastro, para receber, brindes, cashbacks e descontos personalizados.
+4.
+Seleção de prédio via localização: geolocalização ou digitando CEP
+Compras:
+1.
+Carrinho de compras/Botão Comprar e checkout simples.
+2.
+Catálogo inicial de produtos online e serviços com filtros e busca.
+Banners e Comunicações Ativas:
+1.
+Área para exibição de banners promocionais.
+2.
+Mensagens/informativos dentro do app.( histórico de notificações salvas, referencia picpay)
+Sistema de Cashback:
+1.
+Acúmulo de pontos em compras realizadas no app.
+2.
+Visualização do saldo de cashback e uso no pagamento.
+Integração de Pagamento:
+1.
+Conexão com um gateway de pagamento – Própria Gilk
+Banco de Dados e Relatórios:
+1.
+Coleta de dados básicos de uso e vendas.
+2.
+Painel administrativo para análise de dados iniciais. 
