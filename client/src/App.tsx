@@ -1,29 +1,31 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { ProtectedRoute } from "./lib/protected-route";
+import { useAuth } from "./hooks/use-auth";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
-import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
-import ScanPage from "@/pages/scan-page";
+import HomePage from "@/pages/home-page";
+import ScannerPage from "@/pages/scanner-page";
 import CartPage from "@/pages/cart-page";
-import CheckoutPage from "@/pages/checkout-page";
-import PaymentSuccessPage from "@/pages/payment-success-page";
-import PaymentMethodPage from "@/pages/payment-method-page";
-import AddCardPage from "@/pages/add-card-page";
-import { ProtectedRoute } from "./lib/protected-route";
+import ProfilePage from "@/pages/profile-page";
+import PaymentMethodsPage from "@/pages/payment-methods-page";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 function Router() {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner fullScreen />;
+  }
+
   return (
     <Switch>
-      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={HomePage} />
-      <ProtectedRoute path="/scan" component={ScanPage} />
+      <ProtectedRoute path="/scanner" component={ScannerPage} />
       <ProtectedRoute path="/cart" component={CartPage} />
-      <ProtectedRoute path="/checkout" component={CheckoutPage} />
-      <ProtectedRoute path="/payment-success/:id" component={PaymentSuccessPage} />
-      <ProtectedRoute path="/payment-methods" component={PaymentMethodPage} />
-      <ProtectedRoute path="/add-card" component={AddCardPage} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/profile/payment-methods" component={PaymentMethodsPage} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -31,12 +33,10 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen max-w-md mx-auto relative bg-white">
-        <Router />
-        <Toaster />
-      </div>
-    </QueryClientProvider>
+    <>
+      <Router />
+      <Toaster />
+    </>
   );
 }
 

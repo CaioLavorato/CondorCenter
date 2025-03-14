@@ -1,377 +1,437 @@
-import { users, type User, type InsertUser, products, type Product, type InsertProduct, paymentMethods, type PaymentMethod, type InsertPaymentMethod, orders, type Order, type InsertOrder, orderItems, type OrderItem, type InsertOrderItem, cartItems, type CartItem, type InsertCartItem, notifications, type Notification, type InsertNotification } from "@shared/schema";
+import { 
+  users, User, InsertUser, 
+  products, Product, InsertProduct,
+  cartItems, CartItem, InsertCartItem,
+  purchases, Purchase, InsertPurchase,
+  purchaseItems, PurchaseItem, InsertPurchaseItem,
+  paymentMethods, PaymentMethod, InsertPaymentMethod,
+  notifications, Notification, InsertNotification
+} from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 
-// Storage interface with all CRUD operations
+const MemoryStore = createMemoryStore(session);
+
 export interface IStorage {
-  // Session store
-  sessionStore: session.SessionStore;
-  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, data: Partial<User>): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   
   // Product operations
-  getProductById(id: number): Promise<Product | undefined>;
+  getProduct(id: number): Promise<Product | undefined>;
   getProductByBarcode(barcode: string): Promise<Product | undefined>;
   getAllProducts(): Promise<Product[]>;
-  addProduct(product: InsertProduct): Promise<Product>;
-  updateProduct(id: number, data: Partial<Product>): Promise<Product>;
-  removeProduct(id: number): Promise<void>;
-  
-  // Payment method operations
-  getPaymentMethodById(id: number): Promise<PaymentMethod | undefined>;
-  getPaymentMethods(userId: number): Promise<PaymentMethod[]>;
-  addPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
-  updatePaymentMethod(id: number, data: Partial<PaymentMethod>): Promise<PaymentMethod>;
-  removePaymentMethod(id: number): Promise<void>;
-  unsetDefaultPaymentMethods(userId: number): Promise<void>;
-  
-  // Order operations
-  getOrderById(id: number): Promise<Order | undefined>;
-  getOrders(userId: number): Promise<Order[]>;
-  createOrder(order: InsertOrder): Promise<Order>;
-  updateOrder(id: number, data: Partial<Order>): Promise<Order>;
-  
-  // Order item operations
-  getOrderItems(orderId: number): Promise<OrderItem[]>;
-  addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  createProduct(product: InsertProduct): Promise<Product>;
   
   // Cart operations
-  getCartItemById(id: number): Promise<CartItem | undefined>;
-  getCartItemByProductId(userId: number, productId: number): Promise<CartItem | undefined>;
-  getCartItems(userId: number): Promise<CartItem[]>;
-  addCartItem(cartItem: InsertCartItem): Promise<CartItem>;
-  updateCartItem(id: number, data: Partial<CartItem>): Promise<CartItem>;
-  removeCartItem(id: number): Promise<void>;
-  clearCart(userId: number): Promise<void>;
+  getCartItems(userId: number): Promise<(CartItem & { product: Product })[]>;
+  getCartItem(id: number): Promise<CartItem | undefined>;
+  getCartItemByUserAndProduct(userId: number, productId: number): Promise<CartItem | undefined>;
+  createCartItem(cartItem: InsertCartItem): Promise<CartItem>;
+  updateCartItem(id: number, quantity: number): Promise<CartItem | undefined>;
+  deleteCartItem(id: number): Promise<boolean>;
+  clearCart(userId: number): Promise<boolean>;
+  
+  // Purchase operations
+  createPurchase(purchase: InsertPurchase, items: InsertPurchaseItem[]): Promise<Purchase>;
+  getPurchasesByUser(userId: number): Promise<Purchase[]>;
+  getPurchaseItems(purchaseId: number): Promise<(PurchaseItem & { product: Product })[]>;
+  
+  // Payment method operations
+  getPaymentMethods(userId: number): Promise<PaymentMethod[]>;
+  createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod>;
+  updatePaymentMethod(id: number, data: Partial<PaymentMethod>): Promise<PaymentMethod | undefined>;
+  deletePaymentMethod(id: number): Promise<boolean>;
+  setPreferredPaymentMethod(userId: number, paymentMethodId: number): Promise<boolean>;
   
   // Notification operations
-  getNotificationById(id: number): Promise<Notification | undefined>;
   getNotifications(userId: number): Promise<Notification[]>;
-  addNotification(notification: InsertNotification): Promise<Notification>;
-  markNotificationAsRead(id: number): Promise<Notification>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<boolean>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
+  
+  // Session store
+  sessionStore: session.SessionStore;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private products: Map<number, Product>;
-  private paymentMethods: Map<number, PaymentMethod>;
-  private orders: Map<number, Order>;
-  private orderItems: Map<number, OrderItem>;
   private cartItems: Map<number, CartItem>;
+  private purchases: Map<number, Purchase>;
+  private purchaseItems: Map<number, PurchaseItem>;
+  private paymentMethods: Map<number, PaymentMethod>;
   private notifications: Map<number, Notification>;
-  private currentId: { [key: string]: number };
+  
   sessionStore: session.SessionStore;
+  currentId: { [key: string]: number };
 
   constructor() {
     this.users = new Map();
     this.products = new Map();
-    this.paymentMethods = new Map();
-    this.orders = new Map();
-    this.orderItems = new Map();
     this.cartItems = new Map();
+    this.purchases = new Map();
+    this.purchaseItems = new Map();
+    this.paymentMethods = new Map();
     this.notifications = new Map();
+    
     this.currentId = {
       users: 1,
       products: 1,
-      paymentMethods: 1,
-      orders: 1,
-      orderItems: 1,
       cartItems: 1,
+      purchases: 1,
+      purchaseItems: 1,
+      paymentMethods: 1,
       notifications: 1
     };
     
-    // Initialize session store
-    const MemoryStore = createMemoryStore(session);
     this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
+      checkPeriod: 86400000 // 24 hours
     });
     
-    // Add some sample products
+    // Seed some sample products
     this.seedProducts();
   }
-
-  private seedProducts() {
-    const sampleProducts: InsertProduct[] = [
-      {
-        name: "Água Mineral 500ml",
-        description: "Água mineral sem gás 500ml",
-        barcode: "7891234567890",
-        price: 2.5,
-        imageUrl: "/assets/water.jpg"
-      },
-      {
-        name: "Chocolate ao Leite",
-        description: "Chocolate ao leite 90g",
-        barcode: "7891234567891",
-        price: 5.9,
-        imageUrl: "/assets/chocolate.jpg"
-      },
-      {
-        name: "Batata Chips Original",
-        description: "Batata chips sabor original 100g",
-        barcode: "7891234567892",
-        price: 7.5,
-        imageUrl: "/assets/chips.jpg"
-      },
-      {
-        name: "Refrigerante Cola 350ml",
-        description: "Refrigerante sabor cola 350ml",
-        barcode: "7891234567893",
-        price: 4.5,
-        imageUrl: "/assets/cola.jpg"
-      },
-      {
-        name: "Pão de Forma Integral",
-        description: "Pão de forma integral 500g",
-        barcode: "7891234567894",
-        price: 6.9,
-        imageUrl: "/assets/bread.jpg"
-      }
-    ];
-
-    sampleProducts.forEach(product => {
-      this.addProduct(product);
-    });
-  }
-
+  
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
-
+  
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.email.toLowerCase() === email.toLowerCase()
     );
   }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.getUserByEmail(username);
-  }
-
+  
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId.users++;
-    const user: User = { ...insertUser, id, createdAt: new Date() };
+    const timestamp = new Date();
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      notificationsCount: 0,
+      cashbackBalance: 0,
+      createdAt: timestamp
+    };
     this.users.set(id, user);
     return user;
   }
-
-  async updateUser(id: number, data: Partial<User>): Promise<User> {
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
     const user = await this.getUser(id);
-    if (!user) {
-      throw new Error(`User with ID ${id} not found`);
-    }
+    if (!user) return undefined;
     
-    const updatedUser = { ...user, ...data };
+    const updatedUser = { ...user, ...userData };
     this.users.set(id, updatedUser);
     return updatedUser;
   }
-
+  
   // Product operations
-  async getProductById(id: number): Promise<Product | undefined> {
+  async getProduct(id: number): Promise<Product | undefined> {
     return this.products.get(id);
   }
-
+  
   async getProductByBarcode(barcode: string): Promise<Product | undefined> {
     return Array.from(this.products.values()).find(
       (product) => product.barcode === barcode
     );
   }
-
+  
   async getAllProducts(): Promise<Product[]> {
     return Array.from(this.products.values());
   }
-
-  async addProduct(product: InsertProduct): Promise<Product> {
+  
+  async createProduct(product: InsertProduct): Promise<Product> {
     const id = this.currentId.products++;
     const newProduct: Product = { ...product, id };
     this.products.set(id, newProduct);
     return newProduct;
   }
-
-  async updateProduct(id: number, data: Partial<Product>): Promise<Product> {
-    const product = await this.getProductById(id);
-    if (!product) {
-      throw new Error(`Product with ID ${id} not found`);
+  
+  // Cart operations
+  async getCartItems(userId: number): Promise<(CartItem & { product: Product })[]> {
+    const cartItems = Array.from(this.cartItems.values()).filter(
+      (item) => item.userId === userId
+    );
+    
+    return Promise.all(
+      cartItems.map(async (item) => {
+        const product = await this.getProduct(item.productId);
+        return { ...item, product: product! };
+      })
+    );
+  }
+  
+  async getCartItem(id: number): Promise<CartItem | undefined> {
+    return this.cartItems.get(id);
+  }
+  
+  async getCartItemByUserAndProduct(userId: number, productId: number): Promise<CartItem | undefined> {
+    return Array.from(this.cartItems.values()).find(
+      (item) => item.userId === userId && item.productId === productId
+    );
+  }
+  
+  async createCartItem(cartItem: InsertCartItem): Promise<CartItem> {
+    const existingItem = await this.getCartItemByUserAndProduct(
+      cartItem.userId,
+      cartItem.productId
+    );
+    
+    if (existingItem) {
+      const updatedItem = { 
+        ...existingItem, 
+        quantity: existingItem.quantity + cartItem.quantity 
+      };
+      this.cartItems.set(existingItem.id, updatedItem);
+      return updatedItem;
     }
     
-    const updatedProduct = { ...product, ...data };
-    this.products.set(id, updatedProduct);
-    return updatedProduct;
+    const id = this.currentId.cartItems++;
+    const newCartItem: CartItem = { ...cartItem, id };
+    this.cartItems.set(id, newCartItem);
+    return newCartItem;
   }
-
-  async removeProduct(id: number): Promise<void> {
-    this.products.delete(id);
+  
+  async updateCartItem(id: number, quantity: number): Promise<CartItem | undefined> {
+    const cartItem = await this.getCartItem(id);
+    if (!cartItem) return undefined;
+    
+    if (quantity <= 0) {
+      this.cartItems.delete(id);
+      return undefined;
+    }
+    
+    const updatedItem = { ...cartItem, quantity };
+    this.cartItems.set(id, updatedItem);
+    return updatedItem;
   }
-
+  
+  async deleteCartItem(id: number): Promise<boolean> {
+    return this.cartItems.delete(id);
+  }
+  
+  async clearCart(userId: number): Promise<boolean> {
+    const cartItems = Array.from(this.cartItems.values()).filter(
+      (item) => item.userId === userId
+    );
+    
+    cartItems.forEach(item => {
+      this.cartItems.delete(item.id);
+    });
+    
+    return true;
+  }
+  
+  // Purchase operations
+  async createPurchase(purchase: InsertPurchase, items: InsertPurchaseItem[]): Promise<Purchase> {
+    const id = this.currentId.purchases++;
+    const timestamp = new Date();
+    const newPurchase: Purchase = { ...purchase, id, date: timestamp };
+    this.purchases.set(id, newPurchase);
+    
+    // Save purchase items
+    items.forEach(item => {
+      const itemId = this.currentId.purchaseItems++;
+      const newItem: PurchaseItem = { ...item, id, purchaseId: id };
+      this.purchaseItems.set(itemId, newItem);
+    });
+    
+    // Add cashback to user
+    const user = await this.getUser(purchase.userId);
+    if (user) {
+      await this.updateUser(user.id, {
+        cashbackBalance: user.cashbackBalance + purchase.cashbackEarned
+      });
+    }
+    
+    // Clear user's cart
+    await this.clearCart(purchase.userId);
+    
+    return newPurchase;
+  }
+  
+  async getPurchasesByUser(userId: number): Promise<Purchase[]> {
+    return Array.from(this.purchases.values())
+      .filter(purchase => purchase.userId === userId)
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+  
+  async getPurchaseItems(purchaseId: number): Promise<(PurchaseItem & { product: Product })[]> {
+    const items = Array.from(this.purchaseItems.values()).filter(
+      (item) => item.purchaseId === purchaseId
+    );
+    
+    return Promise.all(
+      items.map(async (item) => {
+        const product = await this.getProduct(item.productId);
+        return { ...item, product: product! };
+      })
+    );
+  }
+  
   // Payment method operations
-  async getPaymentMethodById(id: number): Promise<PaymentMethod | undefined> {
-    return this.paymentMethods.get(id);
-  }
-
   async getPaymentMethods(userId: number): Promise<PaymentMethod[]> {
     return Array.from(this.paymentMethods.values()).filter(
       (method) => method.userId === userId
     );
   }
-
-  async addPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod> {
+  
+  async createPaymentMethod(paymentMethod: InsertPaymentMethod): Promise<PaymentMethod> {
     const id = this.currentId.paymentMethods++;
-    const newMethod: PaymentMethod = { ...paymentMethod, id };
-    this.paymentMethods.set(id, newMethod);
-    return newMethod;
-  }
-
-  async updatePaymentMethod(id: number, data: Partial<PaymentMethod>): Promise<PaymentMethod> {
-    const method = await this.getPaymentMethodById(id);
-    if (!method) {
-      throw new Error(`Payment method with ID ${id} not found`);
+    const newPaymentMethod: PaymentMethod = { ...paymentMethod, id };
+    
+    // If this is marked as preferred, un-prefer others
+    if (newPaymentMethod.isPreferred) {
+      const methods = await this.getPaymentMethods(paymentMethod.userId);
+      methods.forEach(method => {
+        if (method.isPreferred) {
+          this.paymentMethods.set(method.id, { ...method, isPreferred: false });
+        }
+      });
     }
+    
+    this.paymentMethods.set(id, newPaymentMethod);
+    return newPaymentMethod;
+  }
+  
+  async updatePaymentMethod(id: number, data: Partial<PaymentMethod>): Promise<PaymentMethod | undefined> {
+    const method = this.paymentMethods.get(id);
+    if (!method) return undefined;
     
     const updatedMethod = { ...method, ...data };
     this.paymentMethods.set(id, updatedMethod);
     return updatedMethod;
   }
-
-  async removePaymentMethod(id: number): Promise<void> {
-    this.paymentMethods.delete(id);
+  
+  async deletePaymentMethod(id: number): Promise<boolean> {
+    return this.paymentMethods.delete(id);
   }
-
-  async unsetDefaultPaymentMethods(userId: number): Promise<void> {
+  
+  async setPreferredPaymentMethod(userId: number, paymentMethodId: number): Promise<boolean> {
     const methods = await this.getPaymentMethods(userId);
+    
     for (const method of methods) {
-      if (method.isDefault) {
-        await this.updatePaymentMethod(method.id, { isDefault: false });
-      }
-    }
-  }
-
-  // Order operations
-  async getOrderById(id: number): Promise<Order | undefined> {
-    return this.orders.get(id);
-  }
-
-  async getOrders(userId: number): Promise<Order[]> {
-    return Array.from(this.orders.values())
-      .filter((order) => order.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
-
-  async createOrder(order: InsertOrder): Promise<Order> {
-    const id = this.currentId.orders++;
-    const newOrder: Order = { ...order, id, createdAt: new Date() };
-    this.orders.set(id, newOrder);
-    return newOrder;
-  }
-
-  async updateOrder(id: number, data: Partial<Order>): Promise<Order> {
-    const order = await this.getOrderById(id);
-    if (!order) {
-      throw new Error(`Order with ID ${id} not found`);
+      const isPreferred = method.id === paymentMethodId;
+      await this.updatePaymentMethod(method.id, { isPreferred });
     }
     
-    const updatedOrder = { ...order, ...data };
-    this.orders.set(id, updatedOrder);
-    return updatedOrder;
+    return true;
   }
-
-  // Order item operations
-  async getOrderItems(orderId: number): Promise<OrderItem[]> {
-    return Array.from(this.orderItems.values()).filter(
-      (item) => item.orderId === orderId
-    );
-  }
-
-  async addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
-    const id = this.currentId.orderItems++;
-    const newItem: OrderItem = { ...orderItem, id };
-    this.orderItems.set(id, newItem);
-    return newItem;
-  }
-
-  // Cart operations
-  async getCartItemById(id: number): Promise<CartItem | undefined> {
-    return this.cartItems.get(id);
-  }
-
-  async getCartItemByProductId(userId: number, productId: number): Promise<CartItem | undefined> {
-    return Array.from(this.cartItems.values()).find(
-      (item) => item.userId === userId && item.productId === productId
-    );
-  }
-
-  async getCartItems(userId: number): Promise<CartItem[]> {
-    return Array.from(this.cartItems.values()).filter(
-      (item) => item.userId === userId
-    );
-  }
-
-  async addCartItem(cartItem: InsertCartItem): Promise<CartItem> {
-    const id = this.currentId.cartItems++;
-    const newItem: CartItem = { ...cartItem, id, createdAt: new Date() };
-    this.cartItems.set(id, newItem);
-    return newItem;
-  }
-
-  async updateCartItem(id: number, data: Partial<CartItem>): Promise<CartItem> {
-    const item = await this.getCartItemById(id);
-    if (!item) {
-      throw new Error(`Cart item with ID ${id} not found`);
-    }
-    
-    const updatedItem = { ...item, ...data };
-    this.cartItems.set(id, updatedItem);
-    return updatedItem;
-  }
-
-  async removeCartItem(id: number): Promise<void> {
-    this.cartItems.delete(id);
-  }
-
-  async clearCart(userId: number): Promise<void> {
-    const items = await this.getCartItems(userId);
-    for (const item of items) {
-      this.cartItems.delete(item.id);
-    }
-  }
-
+  
   // Notification operations
-  async getNotificationById(id: number): Promise<Notification | undefined> {
-    return this.notifications.get(id);
-  }
-
   async getNotifications(userId: number): Promise<Notification[]> {
     return Array.from(this.notifications.values())
-      .filter((notification) => notification.userId === userId)
+      .filter(notification => notification.userId === userId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-
-  async addNotification(notification: InsertNotification): Promise<Notification> {
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
     const id = this.currentId.notifications++;
+    const timestamp = new Date();
     const newNotification: Notification = { 
       ...notification, 
       id, 
-      isRead: false,
-      createdAt: new Date() 
+      read: false, 
+      createdAt: timestamp 
     };
+    
     this.notifications.set(id, newNotification);
-    return newNotification;
-  }
-
-  async markNotificationAsRead(id: number): Promise<Notification> {
-    const notification = await this.getNotificationById(id);
-    if (!notification) {
-      throw new Error(`Notification with ID ${id} not found`);
+    
+    // Update user's notification count
+    const user = await this.getUser(notification.userId);
+    if (user) {
+      await this.updateUser(user.id, {
+        notificationsCount: user.notificationsCount + 1
+      });
     }
     
-    const updatedNotification = { ...notification, isRead: true };
-    this.notifications.set(id, updatedNotification);
-    return updatedNotification;
+    return newNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const notification = this.notifications.get(id);
+    if (!notification || notification.read) return false;
+    
+    notification.read = true;
+    this.notifications.set(id, notification);
+    
+    // Decrement user's notification count
+    const user = await this.getUser(notification.userId);
+    if (user && user.notificationsCount > 0) {
+      await this.updateUser(user.id, {
+        notificationsCount: user.notificationsCount - 1
+      });
+    }
+    
+    return true;
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    const notifications = Array.from(this.notifications.values()).filter(
+      notification => notification.userId === userId && !notification.read
+    );
+    
+    notifications.forEach(notification => {
+      notification.read = true;
+      this.notifications.set(notification.id, notification);
+    });
+    
+    // Reset user's notification count
+    const user = await this.getUser(userId);
+    if (user) {
+      await this.updateUser(user.id, { notificationsCount: 0 });
+    }
+    
+    return true;
+  }
+  
+  // Seed data
+  private seedProducts() {
+    const products: InsertProduct[] = [
+      {
+        name: "Refrigerante Cola 2L",
+        barcode: "7891234567890",
+        price: 8.90,
+        description: "Refrigerante sabor cola garrafa 2 litros",
+        imageUrl: "https://images.unsplash.com/photo-1553456558-aff63285bdd1?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80"
+      },
+      {
+        name: "Pão de Forma Integral",
+        barcode: "7891234567891",
+        price: 6.50,
+        description: "Pão de forma integral fatiado 500g",
+        imageUrl: "https://images.unsplash.com/photo-1570448862600-2e9d083074df?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80"
+      },
+      {
+        name: "Leite Integral 1L",
+        barcode: "7891234567892",
+        price: 4.99,
+        description: "Leite UHT integral 1 litro",
+        imageUrl: "https://images.unsplash.com/photo-1550583724-b2692b85b150?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80"
+      },
+      {
+        name: "Café em Pó 500g",
+        barcode: "7891234567893",
+        price: 15.90,
+        description: "Café torrado e moído 500g",
+        imageUrl: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80"
+      },
+      {
+        name: "Arroz Branco 5kg",
+        barcode: "7891234567894",
+        price: 22.50,
+        description: "Arroz branco tipo 1 pacote 5kg",
+        imageUrl: "https://images.unsplash.com/photo-1594506425793-58c976ce34ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=128&q=80"
+      }
+    ];
+    
+    products.forEach(product => {
+      this.createProduct(product);
+    });
   }
 }
 

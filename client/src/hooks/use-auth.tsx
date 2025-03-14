@@ -4,20 +4,35 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User, LoginData, RegistrationData } from "@shared/schema";
+import { InsertUser, User } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-
-type UserWithoutPassword = Omit<User, "password">;
+import { z } from "zod";
 
 type AuthContextType = {
-  user: UserWithoutPassword | null;
+  user: User | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<UserWithoutPassword, Error, LoginData>;
+  loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<UserWithoutPassword, Error, RegistrationData>;
+  registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
+
+const loginSchema = z.object({
+  email: z.string().email("Digite um e-mail válido"),
+  password: z.string().min(1, "Digite sua senha"),
+});
+
+const registerSchema = z.object({
+  fullName: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  email: z.string().email("Digite um e-mail válido"),
+  phone: z.string().min(10, "Digite um número de telefone válido"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  building: z.string().optional(),
+});
+
+type LoginData = z.infer<typeof loginSchema>;
+type RegisterData = z.infer<typeof registerSchema>;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -27,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<UserWithoutPassword | undefined, Error>({
+  } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
@@ -37,16 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (user: UserWithoutPassword) => {
+    onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
-        title: "Login realizado com sucesso",
-        description: `Bem-vindo, ${user.name}!`,
+        title: "Login realizado",
+        description: `Bem-vindo, ${user.fullName}!`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Falha no login",
+        title: "Erro ao fazer login",
         description: error.message,
         variant: "destructive",
       });
@@ -54,20 +69,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (credentials: RegistrationData) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
+    mutationFn: async (userData: RegisterData) => {
+      const res = await apiRequest("POST", "/api/register", userData);
       return await res.json();
     },
-    onSuccess: (user: UserWithoutPassword) => {
+    onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
-        title: "Cadastro realizado com sucesso",
-        description: `Bem-vindo, ${user.name}!`,
+        title: "Cadastro realizado",
+        description: "Sua conta foi criada com sucesso!",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Falha no cadastro",
+        title: "Erro ao criar conta",
         description: error.message,
         variant: "destructive",
       });
@@ -80,14 +95,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.invalidateQueries();
       toast({
-        title: "Logout realizado com sucesso",
-        description: "Você saiu do aplicativo.",
+        title: "Logout realizado",
+        description: "Você saiu do aplicativo",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Falha ao sair",
+        title: "Erro ao fazer logout",
         description: error.message,
         variant: "destructive",
       });
