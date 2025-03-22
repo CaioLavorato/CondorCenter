@@ -2,6 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { swaggerDocument } from "./swagger";
+import swaggerUi from 'swagger-ui-express';
+import { sendPasswordResetEmail } from "./email";
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 import { 
   insertCartItemSchema, 
   insertPaymentMethodSchema, 

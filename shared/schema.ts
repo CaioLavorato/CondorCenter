@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   phone: text("phone").notNull(),
   password: text("password").notNull(),
   building: text("building"),
+  isAdmin: boolean("is_admin").default(false),
   notificationsCount: integer("notifications_count").default(0),
   cashbackBalance: doublePrecision("cashback_balance").default(0),
   createdAt: timestamp("created_at").defaultNow()
@@ -127,6 +128,22 @@ export type InsertPurchaseItem = z.infer<typeof insertPurchaseItemSchema>;
 
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
 export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
+
+// Buildings table
+export const buildings = pgTable("buildings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertBuildingSchema = createInsertSchema(buildings).omit({
+  id: true,
+  createdAt: true
+});
+
+export type Building = typeof buildings.$inferSelect;
+export type InsertBuilding = z.infer<typeof insertBuildingSchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
