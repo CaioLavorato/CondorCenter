@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const purchaseSchema = insertPurchaseSchema.extend({
         paymentMethod: z.string().min(1)
       });
-      
+
       const validationResult = purchaseSchema.safeParse({
         userId: req.user!.id,
         total,
@@ -246,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const methodId = Number(req.params.id);
       const methods = await storage.getPaymentMethods(req.user!.id);
       const method = methods.find(m => m.id === methodId);
-      
+
       if (!method) {
         return res.status(404).json({ message: "Método de pagamento não encontrado" });
       }
@@ -265,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const methodId = Number(req.params.id);
       const methods = await storage.getPaymentMethods(req.user!.id);
       const method = methods.find(m => m.id === methodId);
-      
+
       if (!method) {
         return res.status(404).json({ message: "Método de pagamento não encontrado" });
       }
@@ -300,7 +300,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/notifications/read-all", async (req, res) => {
+  // Dashboard endpoints
+  app.get("/api/dashboard/stats", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const sales = await storage.getPurchaseStats();
+      const totalRevenue = await storage.getTotalRevenue();
+      const totalOrders = await storage.getTotalOrders();
+
+      res.json({
+        sales,
+        totalRevenue,
+        totalOrders
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+  });
+
+  app.delete("/api/notifications/read-all", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
