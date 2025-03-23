@@ -7,7 +7,10 @@ import swaggerUi from 'swagger-ui-express';
 import { sendPasswordResetEmail } from "./email";
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 import { 
   insertCartItemSchema, 
   insertPaymentMethodSchema, 
